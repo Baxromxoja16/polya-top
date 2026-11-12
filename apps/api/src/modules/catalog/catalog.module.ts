@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { GeographyModule } from '../geography/index.js';
 import { IdentityModule } from '../identity/index.js';
 import { SchedulingModule } from '../scheduling/index.js';
+import { SubscriptionModule } from '../subscription/index.js';
 import { CatalogQueries } from './application/catalog.queries.js';
 import { FavoritesService } from './application/favorites.service.js';
 import { FreeSearchService } from './application/free-search.service.js';
@@ -46,6 +47,7 @@ import {
     GeographyModule,
     SchedulingModule,
     IdentityModule,
+    SubscriptionModule,
   ],
   providers: [
     { provide: VenueRepository, useClass: MongoVenueRepository },

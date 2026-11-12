@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Money, PhoneNumber } from '@polya/shared-kernel';
+import { Money, PhoneNumber, zonedParts } from '@polya/shared-kernel';
 import { type Composer, InlineKeyboard, Keyboard } from 'grammy';
 import type { BotContext } from '../../../../platform/telegram/bot-context.js';
 import {
@@ -19,6 +19,7 @@ import {
   OpeningHours,
   parsePriceInput,
 } from '../../../scheduling/index.js';
+import { FeatureGate } from '../../../subscription/index.js';
 import { CatalogQueries } from '../../application/catalog.queries.js';
 import { RegisterVenueUseCase } from '../../application/register-venue.use-case.js';
 import { VenueManagementService } from '../../application/venue-management.service.js';
@@ -58,6 +59,7 @@ export class OwnerOnboardingBotFeature implements BotFeature {
     private readonly queries: CatalogQueries,
     private readonly identity: IdentityQueries,
     private readonly messenger: TelegramMessenger,
+    private readonly features: FeatureGate,
   ) {}
 
   register(bot: Composer<BotContext>): void {
@@ -283,9 +285,20 @@ export class OwnerOnboardingBotFeature implements BotFeature {
     await this.messenger.send(
       owner.telegramId,
       venue.isPublic
-        ? m.venueApproved(venue.name)
+        ? m.venueApproved(venue.name) + (await this.founderNote(venue, m))
         : m.venueRejected(venue.name, venue.rejectReason),
     );
+  }
+
+  /** TZ Q16: tasdiqdan keyin faol PREMIUM bo'lsa, muddati bilan */
+  private async founderNote(venue: Venue, m: (typeof catalogMessages)['uz']): Promise<string> {
+    const until = await this.features.premiumEndsAt(venue.id);
+    if (!until) return '';
+    const p = zonedParts(until, await this.queries.timeZoneOf(venue.cityId));
+    const date = `${String(p.day).padStart(2, '0')}.${String(p.month).padStart(2, '0')}.${p.year}`;
+    return `
+
+${m.founderTrial(date)}`;
   }
 
   private draft(ctx: BotContext): Draft {

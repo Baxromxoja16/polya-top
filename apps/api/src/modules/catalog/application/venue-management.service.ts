@@ -17,6 +17,7 @@ import {
   SchedulingFacade,
   type Weekday,
 } from '../../scheduling/index.js';
+import { FeatureGate } from '../../subscription/index.js';
 import { Pitch, type PitchFormat, type PitchId, type Surface } from '../domain/pitch.js';
 import { PitchRepository, VenueRepository } from '../domain/repositories.js';
 import type { Amenity, Venue, VenueId } from '../domain/venue.js';
@@ -27,9 +28,6 @@ import {
   isAdminActor,
   NotFoundError,
 } from './actor.js';
-
-/** TZ VC-2e: FREE tarifda 5 ta rasm. Premium (4.9) FeatureGate orqali 15 tagacha oshiradi. */
-export const FREE_PHOTO_LIMIT = 5;
 
 export type VenueEdit =
   | { kind: 'name'; value: string }
@@ -64,6 +62,7 @@ export class VenueManagementService {
     private readonly clock: Clock,
     private readonly ids: IdGenerator,
     private readonly geography: GeographyQueries,
+    private readonly features: FeatureGate,
   ) {}
 
   // --- Admin ko'rigi (TZ VC-1, AD-1) ---
@@ -72,6 +71,8 @@ export class VenueManagementService {
     const venue = await this.loadForAdmin(actor, venueId);
     venue.approve(this.clock.now());
     await this.venues.save(venue);
+    // TZ Q16: "Asoschi hamkor" — birinchi tasdiqda 3 oy PREMIUM (bir marta)
+    await this.features.startFounderTrial(venue.id);
     return venue;
   }
 
@@ -83,6 +84,11 @@ export class VenueManagementService {
   }
 
   // --- Owner tahrirlari (TZ VC-2b) ---
+
+  /** TZ VC-2e / 4.9: FREE — 5, PREMIUM — 15 ta rasm */
+  photoLimit(venueId: VenueId): Promise<number> {
+    return this.features.limit(venueId, 'PHOTOS');
+  }
 
   async edit(actor: Actor, venueId: VenueId, change: VenueEdit): Promise<EditOutcome> {
     const venue = await this.load(actor, venueId);
@@ -116,7 +122,7 @@ export class VenueManagementService {
         venue.toggleAmenity(change.value, now);
         break;
       case 'photo':
-        venue.addPhoto(change.value, FREE_PHOTO_LIMIT, now);
+        venue.addPhoto(change.value, await this.photoLimit(venue.id), now);
         break;
       case 'clearPhotos':
         venue.clearPhotos(now);

@@ -42,6 +42,8 @@ export const catalogMessages = defineMessages(
 
     // --- Admin qarori natijasi ---
     venueApproved: (name: string) => `🎉 «${name}» tasdiqlandi va endi qidiruvda ko'rinadi!`,
+    founderTrial: (until: string) =>
+      `🎁 Siz — «Asoschi hamkor»! PREMIUM tarif ${until} gacha bepul: 15 ta rasm, qidiruvda «⭐ Tavsiya etiladi», chegirma e'lonlari.`,
     venueRejected: (name: string, reason: string | null) =>
       `«${name}» rad etildi.${reason ? `\nSabab: ${reason}` : ''}\n\nTahrirlab, qayta yuborishingiz mumkin: 🏟 Stadion egasiman → stadion → 🔁 Qayta yuborish.`,
   },
@@ -83,6 +85,8 @@ export const catalogMessages = defineMessages(
     cityRequired: 'Сначала выберите город в настройках: ⚙️ Настройки → 🏙 Город.',
 
     venueApproved: (name) => `🎉 «${name}» одобрен и теперь виден в поиске!`,
+    founderTrial: (until) =>
+      `🎁 Вы — «Партнёр-основатель»! PREMIUM бесплатно до ${until}: 15 фото, «⭐ Рекомендуем» в поиске, объявления о скидках.`,
     venueRejected: (name, reason) =>
       `«${name}» отклонён.${reason ? `\nПричина: ${reason}` : ''}\n\nИсправьте и отправьте снова: 🏟 Я владелец стадиона → стадион → 🔁 Отправить снова.`,
   },

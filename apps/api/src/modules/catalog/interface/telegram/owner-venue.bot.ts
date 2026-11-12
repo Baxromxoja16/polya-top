@@ -23,7 +23,6 @@ import {
   type VenueCardView,
 } from '../../application/catalog.queries.js';
 import {
-  FREE_PHOTO_LIMIT,
   type VenueEdit,
   VenueManagementService,
 } from '../../application/venue-management.service.js';
@@ -198,7 +197,7 @@ export class OwnerVenueBotFeature implements BotFeature {
       } catch (error) {
         if (!(error instanceof DomainError)) throw error;
         ctx.session.awaiting = undefined;
-        await ctx.reply(m.photoLimit(FREE_PHOTO_LIMIT), {
+        await ctx.reply(m.photoLimit(await this.manage.photoLimit(venueId as VenueId)), {
           reply_markup: doneKeyboard(ctx, venueId),
         });
       }
@@ -348,7 +347,12 @@ export class OwnerVenueBotFeature implements BotFeature {
     if (field === 'photos') {
       const card = await this.card(ctx, target.venueId as string);
       return void (await ctx.reply(
-        m.askPhotos(Math.max(0, FREE_PHOTO_LIMIT - card.venue.photos.length)),
+        m.askPhotos(
+          Math.max(
+            0,
+            (await this.manage.photoLimit(target.venueId as VenueId)) - card.venue.photos.length,
+          ),
+        ),
         {
           reply_markup: new InlineKeyboard()
             .text(m.btnDone, `cat:done:${target.venueId}`)
