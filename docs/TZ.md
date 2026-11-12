@@ -790,6 +790,7 @@ Har bosqich oxirida: kod + testlar → siz tekshirasiz → tasdiqlaysiz → keyi
 | 2 — Catalog + Search | ✅ | Geography, Owner arizasi, onboarding, admin ko'rigi, boshqaruv menyusi, qidiruv, kartochka, sevimlilar |
 | 3 — Schedule & Pricing | ✅ | Hafta kunlari, istisno kunlar, narx qoidalari, bo'sh slotlar (Availability), "Bo'sh maydon topish", "Hozir bo'sh", kartochkada bo'sh vaqtlar to'ri |
 | 4 — Booking (core) | ✅ | So'rovlar navbati, kontakt almashinuvi, tasdiqlash/rad etish, slot-lock'lar (50 parallel → 1 g'olib), qo'lda bandlov, blok, bekor qilish, NO_SHOW, muddat/yakunlash fon jarayoni, "Mening bandlovlarim", "Yana bandlash" |
+| 5 — Notifications + Jobs | ✅ | BullMQ yetkazish navbati (rate limit, 429, 403 → bloklangan), eslatma 2 soat oldin, Owner'ga eslatma 10 daqiqa oldin, kunlik jadval 21:00 — ADR-0006 |
 
 ### TZ'dan chetlanishlar (asoslangan)
 | Joy | TZ | Amalda | Sabab |
@@ -798,7 +799,8 @@ Har bosqich oxirida: kod + testlar → siz tekshirasiz → tasdiqlaysiz → keyi
 | EC-O6 | Topilmagan so'rovlar Admin uchun yig'iladi | Strukturali log (`search.miss`) | Admin paneli (7-bosqich) shu log'dan hisobot oladi |
 | 4.2 | Admin boshqaruvi bot orqali | Bot buyruqlari (`/admin`, `/cities`, `/addcity`, `/pending` ...) | Adminlar ichki xodim; to'liq web panel — v2 |
 | VC-5d | "Bo'shasa xabar ber" | 6a-bosqichda (marketing/xabarnomalar bilan) | Navbatli xabarnoma talab qilinadi |
-| 7.6 | Delayed job'lar (BullMQ) | 4-bosqichda davriy tekshiruv (`BOOKING_SWEEP_SECONDS`), BullMQ — 5-bosqichda | Indekslangan so'rov + optimistic versiya — oddiy va ko'p nusxada xavfsiz |
+| 7.6, 4.6 | Delayed job'lar + Transactional Outbox | BullMQ — faqat yetkazish uchun; vaqt triggerlari holatdan (davriy tekshiruv + atomik flag) — ADR-0006 | Hamma triggerlar bandlov holatidan aniqlanadi; Outbox'siz ham "ko'pi bilan bir marta" kafolati |
+| 4.6 | Kunlik jadvalni Owner o'chira oladi | Hozircha hammaga yuboriladi | Sozlama 7-bosqichda |
 | 3 (Staff) | Staff roli | Hozircha faqat Owner/Admin | Xodim taklif qilish oqimi 7-bosqichda (hardening) |
 | EC-S2, EC-S3, EC-B9 | Jadval/istisno/maydon holati o'zgarganda mavjud bandlovlar haqida ogohlantirish | 7-bosqichda | Asosiy oqim ishlaydi; ogohlantirish — qulaylik |
 | BK-3e | Navbat ≤ 3 | Parallel ikki so'rov kamdan-kam 4-chisini o'tkazib yuborishi mumkin | Navbat — yumshoq cheklov; double booking'ga ta'sir qilmaydi |
