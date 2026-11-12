@@ -9,7 +9,7 @@ import {
 } from '../../../../platform/telegram/bot-feature.js';
 import { sendMainMenu } from '../../../../platform/telegram/core.features.js';
 import { coreMessages } from '../../../../platform/telegram/core.messages.js';
-import { hasRole, isAdmin } from '../../../../platform/telegram/guards.js';
+import { hasRole, isAdmin, splitFirstWord } from '../../../../platform/telegram/guards.js';
 import { isMainMenuLabel, menuLabels } from '../../../../platform/telegram/main-menu.js';
 import { TelegramMessenger } from '../../../../platform/telegram/telegram-messenger.js';
 import { showMessage } from '../../../../platform/telegram/ui.js';
@@ -119,6 +119,26 @@ export class OwnerOnboardingBotFeature implements BotFeature {
       if (pending.length === 0) return void (await ctx.reply("Ko'rib chiqiladigan stadion yo'q."));
       for (const venue of pending)
         await ctx.reply(await this.adminText(venue), { reply_markup: reviewKeyboard(venue.id) });
+    });
+    // TZ 4.9: MVP'da to'lov qo'lda — Admin PREMIUM'ni uzaytiradi
+    admin.command('premium', async (ctx) => {
+      const [ref, daysText] = splitFirstWord(ctx.match);
+      const card = ref ? await this.queries.venueCard(ref) : null;
+      if (!card)
+        return void (await ctx.reply(
+          'Foydalanish: /premium <slug> [kun]\nMasalan: /premium olmaliq-arena 30',
+        ));
+      const venue = card.venue;
+      if (daysText) {
+        const days = Number(daysText);
+        if (!Number.isInteger(days) || days < 1 || days > 366)
+          return void (await ctx.reply("Kun 1…366 oralig'ida bo'lishi kerak."));
+        await this.features.extend(venue.id, days, ctx.currentUser?.id ?? 'admin');
+      }
+      const until = await this.features.premiumEndsAt(venue.id);
+      await ctx.reply(
+        `🏟 ${venue.name}\n${until ? `⭐ PREMIUM — ${await this.formatDate(until, venue.cityId)} gacha` : '🆓 FREE'}`,
+      );
     });
     admin.callbackQuery(/^cat:(ok|no):([0-9a-f]{24})$/, async (ctx) => {
       const id = ctx.match[2] as VenueId;
@@ -271,7 +291,7 @@ export class OwnerOnboardingBotFeature implements BotFeature {
     return [
       '🆕 Yangi stadion — tasdiqlash kerak',
       '',
-      `🏟 ${venue.name}`,
+      `🏟 ${venue.name} · 🔗 ${venue.slug}`,
       `📍 ${venue.landmarkText}`,
       ...(extra ? [`🕒 ${extra.hours}`, `💰 ${formatSum(extra.amount)} so'm/soat`] : []),
       `👤 ${owner?.displayName ?? '—'} · 📱 ${phone}`,
@@ -294,11 +314,14 @@ export class OwnerOnboardingBotFeature implements BotFeature {
   private async founderNote(venue: Venue, m: (typeof catalogMessages)['uz']): Promise<string> {
     const until = await this.features.premiumEndsAt(venue.id);
     if (!until) return '';
-    const p = zonedParts(until, await this.queries.timeZoneOf(venue.cityId));
-    const date = `${String(p.day).padStart(2, '0')}.${String(p.month).padStart(2, '0')}.${p.year}`;
     return `
 
-${m.founderTrial(date)}`;
+${m.founderTrial(await this.formatDate(until, venue.cityId))}`;
+  }
+
+  private async formatDate(instant: Date, cityId: string): Promise<string> {
+    const p = zonedParts(instant, await this.queries.timeZoneOf(cityId));
+    return `${String(p.day).padStart(2, '0')}.${String(p.month).padStart(2, '0')}.${p.year}`;
   }
 
   private draft(ctx: BotContext): Draft {

@@ -27,6 +27,9 @@ const HELP = [
   '/setcenter olmaliq — keyin lokatsiya yuboring',
   '/addlandmark olmaliq Markaziy bozor | Центральный рынок | bozor, rynok',
   '/landmarks olmaliq',
+  '',
+  '/pending — tasdiqlanmagan stadionlar',
+  '/premium <slug> [kun] — obuna holati / PREMIUM uzaytirish',
 ].join('\n');
 
 /**
