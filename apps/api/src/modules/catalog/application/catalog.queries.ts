@@ -176,6 +176,11 @@ export class CatalogQueries {
     return this.venues.listByOwner(ownerId);
   }
 
+  /** MK-5 */
+  async approvedSince(since: Date): Promise<Venue[]> {
+    return this.venues.listApprovedSince(since);
+  }
+
   async pendingReview(): Promise<Venue[]> {
     return this.venues.listPendingReview();
   }

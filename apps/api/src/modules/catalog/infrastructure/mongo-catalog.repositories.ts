@@ -56,6 +56,10 @@ export class MongoVenueRepository extends VenueRepository implements OnModuleIni
     return this.many({ status: 'PENDING_REVIEW' }, { updatedAt: 1 });
   }
 
+  async listApprovedSince(since: Date): Promise<Venue[]> {
+    return this.many({ status: 'APPROVED', approvedAt: { $gte: since } }, { approvedAt: 1 });
+  }
+
   async findByIds(ids: readonly string[]): Promise<Venue[]> {
     return this.many({ _id: { $in: validIds(ids) } }, { name: 1 });
   }

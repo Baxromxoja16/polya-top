@@ -29,6 +29,8 @@ export abstract class VenueRepository {
   abstract listByOwner(ownerId: string): Promise<Venue[]>;
   abstract listPendingReview(): Promise<Venue[]>;
   abstract findByIds(ids: readonly string[]): Promise<Venue[]>;
+  /** MK-5: "Yangi polya" e'loni uchun — shu vaqtdan keyin tasdiqlangan ommaviy stadionlar */
+  abstract listApprovedSince(since: Date): Promise<Venue[]>;
   /** Faqat APPROVED. Saralash: `near` bo'lsa — masofa (lokatsiyasizlar oxirida, VC-2d), aks holda to'liqlik. */
   abstract search(criteria: VenueSearchCriteria): Promise<VenueSearchHit[]>;
   /** TZ EC-B18: shu shaharda bir xil normallashtirilgan nomli stadionlar */

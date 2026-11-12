@@ -78,6 +78,10 @@ VenueSchema.index({ location: '2dsphere' }, { name: 'geo_location' });
 VenueSchema.index({ status: 1, cityId: 1, districtId: 1, completeness: -1 }, { name: 'catalog' });
 VenueSchema.index({ status: 1, cityId: 1, searchTokens: 1 }, { name: 'text_tokens' });
 VenueSchema.index({ cityId: 1, nameKey: 1 }, { name: 'name_key' });
+VenueSchema.index(
+  { approvedAt: 1 },
+  { name: 'approved_at', partialFilterExpression: { approvedAt: { $type: 'date' } } },
+);
 
 export interface PitchDocument {
   _id: Types.ObjectId;
