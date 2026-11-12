@@ -8,6 +8,7 @@ import { GeographyModule } from './modules/geography/index.js';
 import { IdentityModule } from './modules/identity/index.js';
 import { ReviewsModule } from './modules/reviews/index.js';
 import { SchedulingModule } from './modules/scheduling/index.js';
+import { SubscriptionModule } from './modules/subscription/index.js';
 import { DatabaseModule } from './platform/database/database.module.js';
 import { LoggerModule } from './platform/logging/logger.module.js';
 import { RedisModule } from './platform/redis/redis.module.js';
@@ -32,6 +33,7 @@ import { ClockModule } from './platform/time/clock.module.js';
     CatalogModule,
     BookingModule,
     ReviewsModule,
+    SubscriptionModule,
   ],
 })
 export class AppModule {}
