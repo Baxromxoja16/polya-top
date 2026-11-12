@@ -131,6 +131,46 @@ export class MongoBookingStore extends BookingStore implements OnModuleInit {
     return this.many({ status: 'CONFIRMED', end: { $lte: now } }, { end: 1 }, limit);
   }
 
+  async claimForNotification(
+    flag: 'remindedAt' | 'ownerNudgedAt',
+    f: {
+      status: BookingStatus;
+      startBetween?: [Date, Date];
+      expiresBetween?: [Date, Date];
+      source?: 'BOT';
+    },
+    now: Date,
+    limit: number,
+  ): Promise<Booking[]> {
+    const filter: QueryFilter<BookingDocument> = { status: f.status, [flag]: null };
+    if (f.source) filter.source = f.source;
+    if (f.startBetween) filter.start = { $gt: f.startBetween[0], $lte: f.startBetween[1] };
+    if (f.expiresBetween)
+      filter.expiresAt = { $gt: f.expiresBetween[0], $lte: f.expiresBetween[1] };
+    const candidates = await this.bookings
+      .find(filter)
+      .limit(limit)
+      .lean<BookingDocument[]>()
+      .exec();
+    const claimed: Booking[] = [];
+    for (const doc of candidates) {
+      const r = await this.bookings.collection.updateOne(
+        { _id: doc._id, [flag]: null },
+        { $set: { [flag]: now } },
+      );
+      if (r.modifiedCount === 1) claimed.push(toBooking(doc) as Booking);
+    }
+    return claimed;
+  }
+
+  async listInRange(from: Date, to: Date, statuses: BookingStatus[]): Promise<Booking[]> {
+    return this.many(
+      { status: { $in: statuses }, start: { $gte: from, $lt: to } },
+      { start: 1 },
+      2_000,
+    );
+  }
+
   async occupancy(
     pitchIds: readonly string[],
     from: Date,

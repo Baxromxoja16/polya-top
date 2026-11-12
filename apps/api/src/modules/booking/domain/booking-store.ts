@@ -41,6 +41,22 @@ export abstract class BookingStore {
   abstract listPendingByVenues(venueIds: readonly string[]): Promise<Booking[]>;
   abstract findDueForExpiry(now: Date, limit: number): Promise<Booking[]>;
   abstract findDueForCompletion(now: Date, limit: number): Promise<Booking[]>;
+  /**
+   * Xabarnoma uchun bandlovlarni atomik "band qilish": `flag` hali qo'yilmagan va filtrga mos yozuvlarga
+   * flag qo'yiladi; faqat shu chaqiruv qo'ygan yozuvlar qaytariladi. Ko'p nusxada ham bir marta yuboriladi.
+   */
+  abstract claimForNotification(
+    flag: 'remindedAt' | 'ownerNudgedAt',
+    filter: {
+      status: BookingStatus;
+      startBetween?: [Date, Date];
+      expiresBetween?: [Date, Date];
+      source?: 'BOT';
+    },
+    now: Date,
+    limit: number,
+  ): Promise<Booking[]>;
+  abstract listInRange(from: Date, to: Date, statuses: BookingStatus[]): Promise<Booking[]>;
   abstract occupancy(
     pitchIds: readonly string[],
     from: Date,

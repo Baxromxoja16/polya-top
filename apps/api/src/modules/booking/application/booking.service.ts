@@ -35,6 +35,9 @@ export const MAX_QUEUE = 3;
 export const MAX_PLAYER_PENDING = 3;
 
 /** Owner qo'lda kiritganda: lead time yo'q, uzoqroq ufq va davomiylik (BK-7, EC-B16) */
+const REMIND_BEFORE_MS = 2 * 3_600_000;
+const NUDGE_BEFORE_MS = 10 * 60_000;
+
 const OWNER_POLICY: BookingPolicy = { horizonDays: 60, minLeadMinutes: 0, maxDurationHours: 12 };
 
 export type RequestError =
@@ -341,6 +344,41 @@ export class BookingService {
       }
     }
     return { expired, completed };
+  }
+
+  /** TZ 4.6: o'yindan 2 soat oldin eslatma (faqat bot orqali bandlovlar) */
+  dueReminders(limit = 200): Promise<Booking[]> {
+    const now = this.clock.now();
+    return this.store.claimForNotification(
+      'remindedAt',
+      {
+        status: 'CONFIRMED',
+        source: 'BOT',
+        startBetween: [now, new Date(now.getTime() + REMIND_BEFORE_MS)],
+      },
+      now,
+      limit,
+    );
+  }
+
+  /** TZ BK-3f: so'rov muddati tugashiga 10 daqiqa qolganda Owner'ga qayta eslatma */
+  dueOwnerNudges(limit = 200): Promise<Booking[]> {
+    const now = this.clock.now();
+    return this.store.claimForNotification(
+      'ownerNudgedAt',
+      { status: 'PENDING', expiresBetween: [now, new Date(now.getTime() + NUDGE_BEFORE_MS)] },
+      now,
+      limit,
+    );
+  }
+
+  /** TZ 4.6: Owner'ning ertangi jadvali uchun */
+  upcomingBookings(hours: number): Promise<Booking[]> {
+    const now = this.clock.now();
+    return this.store.listInRange(now, new Date(now.getTime() + hours * 3_600_000), [
+      'PENDING',
+      'CONFIRMED',
+    ]);
   }
 
   // --- yordamchilar ---

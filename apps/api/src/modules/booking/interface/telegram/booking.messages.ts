@@ -25,6 +25,12 @@ export const bookingMessages = defineMessages(
       `❌ ${p.venue}, ${p.when} — so'rov rad etildi.${p.note ? `\nSabab: ${p.note}` : ''}\nBoshqa vaqt yoki stadionni tanlang.`,
     takenToPlayer: (p: { venue: string; when: string }) =>
       `😕 ${p.venue}, ${p.when} — bu vaqt boshqa o'yinchiga berildi. Boshqa vaqtni tanlang: ⚽ Bo'sh maydon topish.`,
+    reminderToPlayer: (p: { venue: string; when: string; landmark: string; phones: string }) =>
+      `⏰ Eslatma: o'yiningiz yaqinlashdi!
+🏟 ${p.venue}
+🕒 ${p.when}
+📍 ${p.landmark}
+📞 ${p.phones}`,
     expiredToPlayer: (p: { venue: string; when: string }) =>
       `⌛️ ${p.venue}, ${p.when} — egasi o'z vaqtida javob bermadi, so'rov bekor bo'ldi.`,
   },
@@ -52,6 +58,12 @@ export const bookingMessages = defineMessages(
       `❌ ${p.venue}, ${p.when} — запрос отклонён.${p.note ? `\nПричина: ${p.note}` : ''}\nВыберите другое время или стадион.`,
     takenToPlayer: (p) =>
       `😕 ${p.venue}, ${p.when} — это время отдали другому игроку. Выберите другое: ⚽ Найти свободное поле.`,
+    reminderToPlayer: (p) =>
+      `⏰ Напоминание: скоро игра!
+🏟 ${p.venue}
+🕒 ${p.when}
+📍 ${p.landmark}
+📞 ${p.phones}`,
     expiredToPlayer: (p) =>
       `⌛️ ${p.venue}, ${p.when} — владелец не ответил вовремя, запрос отменён.`,
   },
@@ -106,6 +118,14 @@ export const ownerText = {
   expired: "So'rov muddati o'tib bo'lgan",
   slotTaken: 'Bu vaqt allaqachon boshqaga berilgan',
   forbidden: "Bu so'rov sizga tegishli emas",
+  nudge: (p: { venue: string; when: string; name: string; phone: string; minutes: number }) =>
+    `⏳ So'rov ${p.minutes} daqiqadan keyin bekor bo'ladi!
+🏟 ${p.venue}
+🕒 ${p.when}
+👤 ${p.name} · 📱 ${p.phone}`,
+  dailyTitle: (date: string) => `🗓 Ertangi jadval (${date}):`,
+  dailyLine: (p: { icon: string; time: string; pitch: string; name: string; phone: string }) =>
+    `${p.icon} ${p.time} · ${p.pitch} · ${p.name} · ${p.phone}`,
 };
 
 export const formatSum = (amount: number) => amount.toLocaleString('ru-RU').replace(/ /g, ' ');
