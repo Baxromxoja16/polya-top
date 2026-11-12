@@ -10,6 +10,7 @@ import {
 } from '../domain/campaign.js';
 import { isWithinSendingWindow } from '../domain/marketing-policy.js';
 import { AnnouncementStore, CampaignStore, MarketingQuota } from '../domain/marketing-ports.js';
+import { type Promotion, PromotionStore } from '../domain/promotion.js';
 
 /** Shu muddat ichida tasdiqlangan stadionlar e'lon qilinadi (eskilari — yo'q) */
 const DISCOVERY_WINDOW_MS = 3 * 86_400_000;
@@ -25,6 +26,8 @@ export const campaignIdOfTag = (tag: string) => (tag.startsWith('mk:') ? tag.sli
 export interface ChunkToSend {
   campaign: Campaign;
   venues: VenueListItem[];
+  /** PROMOTION kampaniyasi uchun */
+  promotion: Promotion | null;
   recipients: AudienceMember[];
 }
 
@@ -42,6 +45,7 @@ export class MarketingService {
     private readonly catalog: CatalogQueries,
     private readonly clock: Clock,
     private readonly ids: IdGenerator,
+    private readonly promotions: PromotionStore,
   ) {}
 
   /** MK-5: yangi tasdiqlangan stadionlar uchun e'lon (har biriga bir marta — EC-M2) */
@@ -99,8 +103,13 @@ export class MarketingService {
       (i) => i.venue.isPublic,
     );
     const now = this.clock.now();
-    if (venues.length === 0) {
-      // EC-M1: stadion(lar) bloklandi/arxivlandi — qolganlarga yuborilmaydi
+    const promotion = campaign.promotionId
+      ? await this.promotions.find(campaign.promotionId)
+      : null;
+    // EC-M1: stadion(lar) bloklandi/arxivlandi — qolganlarga yuborilmaydi.
+    // MK-3 istisnosi: chegirma e'loni oyna ochilguncha eskirsa — bekor.
+    const stale = campaign.kind === 'PROMOTION' && (!promotion || promotion.isStale(now));
+    if (venues.length === 0 || stale) {
       campaign.cancel(now);
       await this.campaigns.save(campaign);
       return null;
@@ -116,7 +125,7 @@ export class MarketingService {
     if (page.length < CHUNK_SIZE) campaign.finish(now);
     else if (last) campaign.advance(last.userId);
     await this.campaigns.save(campaign);
-    return { campaign, venues, recipients };
+    return { campaign, venues, promotion, recipients };
   }
 
   listSending(): Promise<Campaign[]> {

@@ -28,6 +28,7 @@ interface CampaignDocument {
   kind: CampaignKind;
   cityId: string;
   venueIds: string[];
+  promotionId?: string | null;
   status: CampaignStatus;
   cursor: string | null;
   createdAt: Date;
@@ -43,6 +44,7 @@ export const CampaignSchema = new Schema<CampaignDocument>(
     kind: { type: String, required: true },
     cityId: { type: String, required: true },
     venueIds: { type: [String], default: [] },
+    promotionId: { type: String, default: null },
     status: { type: String, required: true },
     cursor: { type: String, default: null },
     createdAt: { type: Date, required: true },
@@ -62,6 +64,7 @@ function toCampaign(d: CampaignDocument): Campaign {
       kind: d.kind,
       cityId: d.cityId,
       venueIds: d.venueIds,
+      promotionId: d.promotionId ?? null,
       status: d.status,
       cursor: d.cursor,
       createdAt: d.createdAt,
@@ -102,6 +105,7 @@ export class MongoCampaignStore extends CampaignStore implements OnModuleInit {
       kind: c.kind,
       cityId: c.cityId,
       venueIds: [...c.venueIds],
+      promotionId: c.promotionId,
       status: c.status,
       cursor: c.cursor,
       createdAt: c.createdAt,

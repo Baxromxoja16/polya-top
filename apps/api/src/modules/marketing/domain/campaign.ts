@@ -34,6 +34,8 @@ export interface CampaignProps {
   kind: CampaignKind;
   cityId: string;
   venueIds: string[];
+  /** PROMOTION kampaniyasi uchun */
+  promotionId: string | null;
   status: CampaignStatus;
   /** MK-6: auditoriya kursori — oxirgi ishlangan foydalanuvchi */
   cursor: string | null;
@@ -58,6 +60,7 @@ export class Campaign extends AggregateRoot<string> {
     kind: CampaignKind;
     cityId: string;
     venueIds: string[];
+    promotionId?: string;
     now: Date;
   }): Campaign {
     return new Campaign(
@@ -66,6 +69,7 @@ export class Campaign extends AggregateRoot<string> {
         kind: params.kind,
         cityId: params.cityId,
         venueIds: [...params.venueIds],
+        promotionId: params.promotionId ?? null,
         status: 'SENDING',
         cursor: null,
         createdAt: params.now,
@@ -87,6 +91,9 @@ export class Campaign extends AggregateRoot<string> {
   }
   get venueIds(): readonly string[] {
     return this.#p.venueIds;
+  }
+  get promotionId(): string | null {
+    return this.#p.promotionId;
   }
   get status(): CampaignStatus {
     return this.#p.status;

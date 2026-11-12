@@ -5,12 +5,15 @@ import {
   type OnApplicationShutdown,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Clock, type Language, zonedParts } from '@polya/shared-kernel';
 import { InlineKeyboard } from 'grammy';
 import type { Env } from '../../../config/env.schema.js';
 import { TelegramMessenger } from '../../../platform/telegram/telegram-messenger.js';
+import { CatalogQueries, type VenueListItem } from '../../catalog/index.js';
 import { IdentityQueries } from '../../identity/index.js';
 import { campaignTag, MarketingService } from '../application/marketing.service.js';
 import type { Campaign } from '../domain/campaign.js';
+import type { Promotion } from '../domain/promotion.js';
 import { blockAlert, formatSum, marketingMessages } from './telegram/marketing.messages.js';
 
 export interface DispatchReport {
@@ -22,6 +25,11 @@ export interface DispatchReport {
 /** Kampaniya xabaridagi tugma: bosish hisoblanadi (MK-7), keyin stadion kartochkasi ochiladi */
 export const openCallback = (campaignId: string, venueId: string) =>
   `mk:o:${campaignId}:${venueId}`;
+
+const hhmm = (d: Date, tz: string) => {
+  const p = zonedParts(d, tz);
+  return `${String(p.hour).padStart(2, '0')}:${String(p.minute).padStart(2, '0')}`;
+};
 
 /**
  * Marketing fon jarayoni (TZ 4.6.1). Interval — `MARKETING_TICK_SECONDS` (0 — o'chiq; testlar `run()`).
@@ -36,8 +44,10 @@ export class MarketingDispatcher implements OnApplicationBootstrap, OnApplicatio
   constructor(
     private readonly marketing: MarketingService,
     private readonly identity: IdentityQueries,
+    private readonly catalog: CatalogQueries,
     private readonly messenger: TelegramMessenger,
     private readonly config: ConfigService<Env, true>,
+    private readonly clock: Clock,
   ) {}
 
   onApplicationBootstrap(): void {
@@ -75,16 +85,15 @@ export class MarketingDispatcher implements OnApplicationBootstrap, OnApplicatio
   private async sendChunk(campaign: Campaign): Promise<number> {
     const chunk = await this.marketing.nextChunk(campaign);
     if (!chunk) return 0;
+    const timeZone = await this.catalog.timeZoneOf(campaign.cityId);
     let sent = 0;
     for (const r of chunk.recipients) {
       const m = marketingMessages[r.language];
-      const lines = chunk.venues.map((i) => ({
-        name: i.venue.name,
-        landmark: i.venue.landmarkText,
-        price: i.minPricePerHour ? formatSum(i.minPricePerHour.amount) : null,
-      }));
-      const [first] = lines;
-      const text = lines.length === 1 && first ? m.newVenue(first) : m.newVenues(lines);
+      const [venue] = chunk.venues;
+      const text =
+        chunk.promotion && venue
+          ? this.promotionText(chunk.promotion, venue, timeZone, r.language)
+          : this.newVenuesText(chunk.venues, r.language);
       const kb = new InlineKeyboard();
       for (const i of chunk.venues)
         kb.text(m.btnOpen(i.venue.name), openCallback(campaign.id, i.venue.id)).row();
@@ -95,5 +104,30 @@ export class MarketingDispatcher implements OnApplicationBootstrap, OnApplicatio
     }
     if (sent) await this.marketing.record(campaign.id, 'sent', sent);
     return sent;
+  }
+
+  private newVenuesText(venues: VenueListItem[], lang: Language): string {
+    const m = marketingMessages[lang];
+    const lines = venues.map((i) => ({
+      name: i.venue.name,
+      landmark: i.venue.landmarkText,
+      price: i.minPricePerHour ? formatSum(i.minPricePerHour.amount) : null,
+    }));
+    const [first] = lines;
+    return lines.length === 1 && first ? m.newVenue(first) : m.newVenues(lines);
+  }
+
+  private promotionText(p: Promotion, venue: VenueListItem, tz: string, lang: Language): string {
+    const m = marketingMessages[lang];
+    const today = zonedParts(this.clock.now(), tz).date;
+    const day = zonedParts(p.range.start, tz).date === today ? m.today : m.tomorrow;
+    return m.promotion({
+      percent: p.props.percent,
+      venue: venue.venue.name,
+      landmark: venue.venue.landmarkText,
+      when: `${day} ${hhmm(p.range.start, tz)}–${hhmm(p.range.end, tz)}`,
+      oldPrice: formatSum(p.props.basePrice.amount),
+      newPrice: formatSum(p.discountedPrice.amount),
+    });
   }
 }
