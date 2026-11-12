@@ -128,6 +128,10 @@ export class CatalogQueries {
     return (await this.pitches.findById(pitchId as Pitch['id']))?.venueId ?? null;
   }
 
+  async timeZoneOf(cityId: string): Promise<string> {
+    return (await this.geography.getCity(cityId as CityId))?.timezone ?? 'Asia/Tashkent';
+  }
+
   /** Booking uchun: maydon + stadion + vaqt zonasi */
   async pitchContext(pitchId: string): Promise<PitchContext | null> {
     const pitch = await this.pitches.findById(pitchId as Pitch['id']);

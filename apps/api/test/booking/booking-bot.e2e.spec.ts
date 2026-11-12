@@ -241,4 +241,72 @@ describe('Booking via bot (e2e): TZ BK-1…BK-4, Q1 (queue + contact exchange)',
       to(ALI, calls.slice(before)).some((c) => String(c.payload.text).includes('javob bermadi')),
     ).toBe(true);
   });
+
+  describe('Owner screens (BK-6…BK-8, BK-13)', () => {
+    it('owner panel links to pending requests and today', async () => {
+      const panel = await owner.send('🏟 Stadion egasiman');
+      expect(buttons(panel)).toEqual(expect.arrayContaining(['bk:own:pending', 'bk:own:today']));
+    });
+
+    it('pending list shows player phone and decision buttons', async () => {
+      await ali.press(`bk:ok:${pitchId}:${sec(13)}:1`);
+      const out = await owner.press('bk:own:pending');
+      expect(texts(out)[0]).toContain("⏳ Javob kutayotgan so'rovlar");
+      expect(texts(out)[0]).toContain('📱 +998 90 111 00 02');
+      expect(buttons(out).some((b) => b?.startsWith('bk:c:'))).toBe(true);
+    });
+
+    it('BK-7: manual booking from the owner grid rejects the overlapping request', async () => {
+      const grid = await owner.press(`bk:ogd:${pitchId}:${day}`);
+      const markup =
+        grid.find((c) => c.payload.reply_markup)?.payload.reply_markup?.inline_keyboard?.flat() ??
+        [];
+      expect(markup.find((b: { text: string }) => b.text === '🟡 13:00')).toBeTruthy();
+      await owner.press(`bk:om:${pitchId}:${sec(13)}`);
+      await owner.press(`bk:omd:${pitchId}:${sec(13)}:1`);
+      const out = await owner.send('Sardor 935551122');
+      expect(texts(out)[0]).toContain("✅ Qo'lda bandlov saqlandi");
+      expect(to(ALI, out)[0]?.payload.text).toContain("boshqa o'yinchiga berildi");
+      const manual = await db.collection('bookings').findOne({ source: 'MANUAL' });
+      expect(manual).toMatchObject({
+        status: 'CONFIRMED',
+        guest: { name: 'Sardor', phone: '+998935551122' },
+      });
+    });
+
+    it('BK-8: block a free slot, then remove the block', async () => {
+      await owner.press(`bk:obd:${pitchId}:${sec(9)}:2`);
+      expect(await db.collection('slot_locks').countDocuments({ ownerType: 'BLOCK' })).toBe(2);
+      const block = await db.collection('blocks').findOne();
+      await owner.press(`bk:obr:${block?._id}`);
+      expect(await db.collection('slot_locks').countDocuments({ ownerType: 'BLOCK' })).toBe(0);
+    });
+
+    it('EC-B13: a block cannot cover a booked slot', async () => {
+      const out = await owner.press(`bk:obd:${pitchId}:${sec(13)}:1`);
+      expect(texts(out)).toContain('Bu vaqt band — boshqa vaqt tanlang.');
+    });
+
+    it('BK-6: owner cancels a confirmed booking with a reason; the player is told', async () => {
+      await ali.press(`bk:ok:${pitchId}:${sec(16)}:1`);
+      const req = await db
+        .collection('bookings')
+        .findOne({ status: 'PENDING', playerId: { $ne: null } }, { sort: { createdAt: -1 } });
+      await owner.press(`bk:c:${req?._id}`);
+      const view = await owner.press(`bk:ov:${req?._id}`);
+      expect(buttons(view)).toContain(`bk:oc:${req?._id}`);
+      await owner.press(`bk:oc:${req?._id}`);
+      const out = await owner.send('Chiroq buzildi');
+      expect(to(ALI, out)[0]?.payload.text).toContain('Sabab: Chiroq buzildi');
+      expect((await db.collection('bookings').findOne({ _id: req?._id }))?.status).toBe(
+        'CANCELLED_BY_OWNER',
+      );
+    });
+
+    it("another owner cannot open this pitch's grid (EC-D1)", async () => {
+      const out = await ali.press(`bk:ogd:${pitchId}:${day}`);
+      expect(out[0]?.payload.text).toBe('Bu tugma eskirgan. Menyu yangilandi.');
+      expect(texts(out).some((t) => t.includes('🗓'))).toBe(false);
+    });
+  });
 });

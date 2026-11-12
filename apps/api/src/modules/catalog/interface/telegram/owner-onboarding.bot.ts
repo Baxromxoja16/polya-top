@@ -150,6 +150,9 @@ export class OwnerOnboardingBotFeature implements BotFeature {
         `cat:v:${v.id}`,
       ).row();
     }
+    // Booking konteksti ekranlari (Catalog Booking'ni bilmaydi — faqat callback protokoli)
+    if (venues.length)
+      kb.text(m.btnPending, 'bk:own:pending').text(m.btnToday, 'bk:own:today').row();
     kb.text(m.btnAddVenue, 'cat:new');
     await showMessage(ctx, venues.length ? m.panelTitle : `${m.panelTitle}\n\n${m.panelEmpty}`, kb);
   }

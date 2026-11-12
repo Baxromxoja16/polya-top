@@ -291,6 +291,8 @@ export class OwnerVenueBotFeature implements BotFeature {
       .row()
       .text(m.btnRules, `cat:pr:${pitch.id}`)
       .row()
+      .text(m.btnGrid, `bk:og:${pitch.id}`)
+      .row()
       .text(m.btnBack, `cat:pitches:${card.venue.id}`);
     await showMessage(ctx, `${m.pitchTitle(pitch.name)}\n${pitchLine(ctx, pitch)}`, kb);
   }
