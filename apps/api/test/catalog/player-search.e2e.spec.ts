@@ -130,7 +130,7 @@ describe('Player search and venue card (e2e): TZ VC-4…VC-7, EC-O6, EC-O7', () 
     expect(card).toContain('🏟 Olmaliq Arena');
     expect(card).toContain('📞 Telefon: +998 90 111 22 33');
     expect(card).toContain("⚽ 1-maydon\n   🕒 08:00–00:00 · 💰 150 000 so'm/soat");
-    const loc = await player.press(buttons(out)[0] as string);
+    const loc = await player.press(buttons(out).find((b) => b?.startsWith('cat:loc:')) as string);
     expect(loc.find((c) => c.method === 'sendVenue')?.payload).toMatchObject({
       title: 'Olmaliq Arena',
     });

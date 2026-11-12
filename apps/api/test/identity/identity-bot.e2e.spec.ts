@@ -262,7 +262,7 @@ describe('Identity bot (e2e): TZ ID-1…ID-6', () => {
     });
 
     it('not yet implemented menu items say "coming soon"', async () => {
-      expect(texts(await sim(1001).send("⚽ Bo'sh maydon topish"))).toEqual([
+      expect(texts(await sim(1001).send('📅 Mening bandlovlarim'))).toEqual([
         "🚧 Bu bo'lim tez orada ishga tushadi.",
       ]);
     });

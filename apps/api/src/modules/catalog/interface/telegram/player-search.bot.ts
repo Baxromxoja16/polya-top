@@ -235,6 +235,8 @@ export class PlayerSearchBotFeature implements BotFeature {
   private cardKeyboard(ctx: BotContext, venueId: string, favorite: boolean): InlineKeyboard {
     const m = searchMessages[ctx.lang];
     return new InlineKeyboard()
+      .text(m.btnSlots, `cat:av:${venueId}`)
+      .row()
       .text(m.btnLocation, `cat:loc:${venueId}`)
       .text(favorite ? m.btnUnfavorite : m.btnFavorite, `cat:fav:${venueId}`);
   }

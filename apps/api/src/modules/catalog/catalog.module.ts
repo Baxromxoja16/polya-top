@@ -28,6 +28,7 @@ import {
 import { OwnerOnboardingBotFeature } from './interface/telegram/owner-onboarding.bot.js';
 import { OwnerScheduleBotFeature } from './interface/telegram/owner-schedule.bot.js';
 import { OwnerVenueBotFeature } from './interface/telegram/owner-venue.bot.js';
+import { PlayerAvailabilityBotFeature } from './interface/telegram/player-availability.bot.js';
 import {
   PlayerSearchBotFeature,
   VenueDeepLinkBotFeature,
@@ -58,6 +59,7 @@ import {
     OwnerVenueBotFeature,
     OwnerScheduleBotFeature,
     PlayerSearchBotFeature,
+    PlayerAvailabilityBotFeature,
     VenueDeepLinkBotFeature,
   ],
   exports: [CatalogQueries],
