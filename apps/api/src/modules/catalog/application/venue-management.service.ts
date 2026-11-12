@@ -1,6 +1,22 @@
 import { Injectable } from '@nestjs/common';
-import { Clock, type GeoPoint, IdGenerator, type Money, PhoneNumber } from '@polya/shared-kernel';
-import { type OpeningHours, SchedulingFacade } from '../../scheduling/index.js';
+import {
+  Clock,
+  type GeoPoint,
+  IdGenerator,
+  type LocalDate,
+  type Money,
+  PhoneNumber,
+  zonedParts,
+} from '@polya/shared-kernel';
+import { type CityId, GeographyQueries } from '../../geography/index.js';
+import {
+  type DaySelector,
+  type OpeningHours,
+  type PitchScheduleDetails,
+  type PricingRule,
+  SchedulingFacade,
+  type Weekday,
+} from '../../scheduling/index.js';
 import { Pitch, type PitchFormat, type PitchId, type Surface } from '../domain/pitch.js';
 import { PitchRepository, VenueRepository } from '../domain/repositories.js';
 import type { Amenity, Venue, VenueId } from '../domain/venue.js';
@@ -47,6 +63,7 @@ export class VenueManagementService {
     private readonly scheduling: SchedulingFacade,
     private readonly clock: Clock,
     private readonly ids: IdGenerator,
+    private readonly geography: GeographyQueries,
   ) {}
 
   // --- Admin ko'rigi (TZ VC-1, AD-1) ---
@@ -177,6 +194,59 @@ export class VenueManagementService {
   async setPitchPrice(actor: Actor, pitchId: PitchId, price: Money): Promise<void> {
     await this.loadPitch(actor, pitchId);
     await this.scheduling.setBasePrice(pitchId, price);
+  }
+
+  async scheduleDetails(actor: Actor, pitchId: PitchId): Promise<PitchScheduleDetails> {
+    await this.loadPitch(actor, pitchId);
+    return this.scheduling.details(pitchId);
+  }
+
+  /** TZ SP-1: hafta kuni bo'yicha (null — yopiq) */
+  async setPitchDayHours(
+    actor: Actor,
+    pitchId: PitchId,
+    day: Weekday,
+    hours: OpeningHours | null,
+  ): Promise<void> {
+    await this.loadPitch(actor, pitchId);
+    await this.scheduling.setDayHours(pitchId, day, hours);
+  }
+
+  /** TZ SP-2. Mavjud bandlovlar bilan to'qnashuv ogohlantirishi (EC-S2, EC-S3) — 4-bosqichda. */
+  async setPitchException(
+    actor: Actor,
+    pitchId: PitchId,
+    date: LocalDate,
+    hours: OpeningHours | null,
+  ): Promise<void> {
+    const { venue } = await this.loadPitch(actor, pitchId);
+    await this.scheduling.setException(pitchId, date, hours, await this.todayOf(venue));
+  }
+
+  async removePitchException(actor: Actor, pitchId: PitchId, date: LocalDate): Promise<void> {
+    await this.loadPitch(actor, pitchId);
+    await this.scheduling.removeException(pitchId, date);
+  }
+
+  /** TZ SP-4 */
+  async addPriceRule(
+    actor: Actor,
+    pitchId: PitchId,
+    rule: { days: DaySelector; fromHour: number; toHour: number; pricePerHour: Money },
+  ): Promise<PricingRule> {
+    await this.loadPitch(actor, pitchId);
+    return this.scheduling.addPriceRule(pitchId, rule);
+  }
+
+  async removePriceRule(actor: Actor, pitchId: PitchId, ruleId: string): Promise<void> {
+    await this.loadPitch(actor, pitchId);
+    await this.scheduling.removePriceRule(pitchId, ruleId);
+  }
+
+  /** Stadion shahri vaqt zonasidagi bugungi sana */
+  async todayOf(venue: Venue): Promise<LocalDate> {
+    const city = await this.geography.getCity(venue.cityId as CityId);
+    return zonedParts(this.clock.now(), city?.timezone ?? 'Asia/Tashkent').date;
   }
 
   private async syncPitchDetails(venue: Venue): Promise<void> {
