@@ -10,6 +10,8 @@ import {
   REVIEW_MODEL,
   ReviewSchema,
 } from './infrastructure/mongo-review.store.js';
+import { ReviewInviter } from './interface/review-inviter.js';
+import { ReviewsBotFeature } from './interface/telegram/reviews.bot.js';
 
 /** Reviews (TZ 4.5): sharhlar, Owner javobi, shikoyatlar, moderatsiya, stadion reytingi. */
 @Module({
@@ -19,7 +21,12 @@ import {
     CatalogModule,
     IdentityModule,
   ],
-  providers: [{ provide: ReviewStore, useClass: MongoReviewStore }, ReviewService],
-  exports: [ReviewService],
+  providers: [
+    { provide: ReviewStore, useClass: MongoReviewStore },
+    ReviewService,
+    ReviewsBotFeature,
+    ReviewInviter,
+  ],
+  exports: [ReviewService, ReviewInviter],
 })
 export class ReviewsModule {}

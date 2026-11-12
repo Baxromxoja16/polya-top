@@ -215,6 +215,7 @@ export class MyBookingsBotFeature implements BotFeature {
     const t = m[ctx.lang];
     const kb = new InlineKeyboard();
     if (b.isActive && b.range.start > this.clock.now()) kb.text(t.btnCancel, `bk:pc:${b.id}`).row();
+    if (b.status === 'COMPLETED') kb.text('⭐', `rv:start:${b.id}`);
     if (b.source === 'BOT' && !b.isActive) kb.text(t.btnAgain, `bk:again:${b.id}`).row();
     kb.text(t.btnBack, 'bk:mine');
     await showMessage(
