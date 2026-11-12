@@ -372,6 +372,24 @@ export class BookingService {
     );
   }
 
+  /** TZ RV-3: o'yin tugaganidan 2 soat o'tib (48 soatgacha) sharh taklifi — bir marta */
+  dueReviewInvites(limit = 200): Promise<Booking[]> {
+    const now = this.clock.now();
+    return this.store.claimForNotification(
+      'reviewInvitedAt',
+      {
+        status: 'COMPLETED',
+        source: 'BOT',
+        endBetween: [
+          new Date(now.getTime() - 48 * 3_600_000),
+          new Date(now.getTime() - 2 * 3_600_000),
+        ],
+      },
+      now,
+      limit,
+    );
+  }
+
   /** TZ BK-3f: so'rov muddati tugashiga 10 daqiqa qolganda Owner'ga qayta eslatma */
   dueOwnerNudges(limit = 200): Promise<Booking[]> {
     const now = this.clock.now();

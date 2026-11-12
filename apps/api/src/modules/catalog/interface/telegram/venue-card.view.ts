@@ -8,7 +8,8 @@ import { AMENITY_LABELS, SURFACE_LABELS } from './venue-labels.js';
 export function venueCardText(card: VenueCardView, lang: Language): string {
   const m = searchMessages[lang];
   const v = card.venue;
-  const lines = [`🏟 ${v.name}`, `📍 ${v.landmarkText}`];
+  const rating = v.rating.count > 0 ? ` · ⭐ ${v.rating.avg.toFixed(1)} (${v.rating.count})` : '';
+  const lines = [`🏟 ${v.name}${rating}`, `📍 ${v.landmarkText}`];
   if (card.districtName) lines.push(`🏘 ${card.districtName[lang]}`);
   lines.push(`📞 ${m.phones}: ${v.phones.map((p) => p.format()).join(', ')}`);
   if (v.amenities.length)
@@ -42,6 +43,7 @@ export function listLine(item: VenueListItem, index: number, lang: Language): st
   const m = searchMessages[lang];
   const parts = [
     `${index}. ${item.venue.name}`,
+    item.venue.rating.count > 0 ? `⭐ ${item.venue.rating.avg.toFixed(1)}` : null,
     distanceLabel(item.distanceMeters, lang),
     item.minPricePerHour ? m.priceFrom(formatSum(item.minPricePerHour.amount)) : null,
   ].filter(Boolean);

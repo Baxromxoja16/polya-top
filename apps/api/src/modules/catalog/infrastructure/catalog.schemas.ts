@@ -20,6 +20,8 @@ export interface VenueDocument {
   amenities: Amenity[];
   photos: string[];
   pitchDetailsComplete: boolean;
+  ratingAvg: number;
+  ratingCount: number;
   status: VenueStatus;
   rejectReason: string | null;
   approvedAt: Date | null;
@@ -56,6 +58,8 @@ export const VenueSchema = new Schema<VenueDocument>(
     amenities: { type: [String], default: [] },
     photos: { type: [String], default: [] },
     pitchDetailsComplete: { type: Boolean, default: false },
+    ratingAvg: { type: Number, default: 0 },
+    ratingCount: { type: Number, default: 0 },
     status: { type: String, required: true },
     rejectReason: { type: String, default: null },
     approvedAt: { type: Date, default: null },

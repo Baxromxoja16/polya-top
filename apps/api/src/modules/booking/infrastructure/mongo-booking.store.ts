@@ -149,11 +149,12 @@ export class MongoBookingStore extends BookingStore implements OnModuleInit {
   }
 
   async claimForNotification(
-    flag: 'remindedAt' | 'ownerNudgedAt',
+    flag: 'remindedAt' | 'ownerNudgedAt' | 'reviewInvitedAt',
     f: {
       status: BookingStatus;
       startBetween?: [Date, Date];
       expiresBetween?: [Date, Date];
+      endBetween?: [Date, Date];
       source?: 'BOT';
     },
     now: Date,
@@ -162,6 +163,7 @@ export class MongoBookingStore extends BookingStore implements OnModuleInit {
     const filter: QueryFilter<BookingDocument> = { status: f.status, [flag]: null };
     if (f.source) filter.source = f.source;
     if (f.startBetween) filter.start = { $gt: f.startBetween[0], $lte: f.startBetween[1] };
+    if (f.endBetween) filter.end = { $gt: f.endBetween[0], $lte: f.endBetween[1] };
     if (f.expiresBetween)
       filter.expiresAt = { $gt: f.expiresBetween[0], $lte: f.expiresBetween[1] };
     const candidates = await this.bookings

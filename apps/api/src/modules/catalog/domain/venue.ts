@@ -47,6 +47,8 @@ export interface VenueProps {
   photos: string[];
   /** Denormalizatsiya: biror maydonda format+qoplama kiritilgan (VC-2c, Catalog app qatlami sinxronlaydi) */
   pitchDetailsComplete: boolean;
+  /** TZ RV-7: denormalizatsiya — Reviews konteksti yangilaydi */
+  rating: { avg: number; count: number };
   status: VenueStatus;
   rejectReason: string | null;
   approvedAt: Date | null;
@@ -101,6 +103,7 @@ export class Venue extends AggregateRoot<VenueId> {
         amenities: [],
         photos: [],
         pitchDetailsComplete: false,
+        rating: { avg: 0, count: 0 },
         status: 'PENDING_REVIEW',
         rejectReason: null,
         approvedAt: null,
@@ -184,6 +187,15 @@ export class Venue extends AggregateRoot<VenueId> {
    * TZ VC-2c: majburiy 4 maydon (nom, orientir, ish vaqti, narx) — 30%;
    * rasm +20, lokatsiya +20, qulayliklar +10, maydon tafsilotlari +10, tavsif +10.
    */
+  get rating(): { avg: number; count: number } {
+    return this.#p.rating;
+  }
+
+  setRating(avg: number, count: number, now: Date): void {
+    this.#p.rating = { avg: Math.round(avg * 10) / 10, count };
+    this.touch(now);
+  }
+
   get pitchDetailsComplete(): boolean {
     return this.#p.pitchDetailsComplete;
   }

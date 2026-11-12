@@ -8,6 +8,7 @@ import { FavoritesService } from './application/favorites.service.js';
 import { FreeSearchService } from './application/free-search.service.js';
 import { RegisterVenueUseCase } from './application/register-venue.use-case.js';
 import { VenueManagementService } from './application/venue-management.service.js';
+import { VenueRatingUpdater } from './application/venue-rating.updater.js';
 import { FavoritesRepository } from './domain/favorites.js';
 import { PitchRepository, VenueRepository } from './domain/repositories.js';
 import {
@@ -55,6 +56,7 @@ import {
     RegisterVenueUseCase,
     VenueManagementService,
     CatalogQueries,
+    VenueRatingUpdater,
     OwnerOnboardingBotFeature,
     OwnerVenueBotFeature,
     OwnerScheduleBotFeature,
@@ -62,6 +64,6 @@ import {
     PlayerAvailabilityBotFeature,
     VenueDeepLinkBotFeature,
   ],
-  exports: [CatalogQueries],
+  exports: [CatalogQueries, VenueRatingUpdater],
 })
 export class CatalogModule {}

@@ -49,11 +49,12 @@ export abstract class BookingStore {
    * flag qo'yiladi; faqat shu chaqiruv qo'ygan yozuvlar qaytariladi. Ko'p nusxada ham bir marta yuboriladi.
    */
   abstract claimForNotification(
-    flag: 'remindedAt' | 'ownerNudgedAt',
+    flag: 'remindedAt' | 'ownerNudgedAt' | 'reviewInvitedAt',
     filter: {
       status: BookingStatus;
       startBetween?: [Date, Date];
       expiresBetween?: [Date, Date];
+      endBetween?: [Date, Date];
       source?: 'BOT';
     },
     now: Date,
