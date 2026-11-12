@@ -5,6 +5,7 @@ import { IdentityModule } from '../identity/index.js';
 import { SchedulingModule } from '../scheduling/index.js';
 import { CatalogQueries } from './application/catalog.queries.js';
 import { FavoritesService } from './application/favorites.service.js';
+import { FreeSearchService } from './application/free-search.service.js';
 import { RegisterVenueUseCase } from './application/register-venue.use-case.js';
 import { VenueManagementService } from './application/venue-management.service.js';
 import { FavoritesRepository } from './domain/favorites.js';
@@ -49,6 +50,7 @@ import {
     { provide: PitchRepository, useClass: MongoPitchRepository },
     { provide: FavoritesRepository, useClass: MongoFavoritesRepository },
     FavoritesService,
+    FreeSearchService,
     RegisterVenueUseCase,
     VenueManagementService,
     CatalogQueries,
