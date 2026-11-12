@@ -18,6 +18,7 @@ export function toCurrentUser(user: User, isNew: boolean): CurrentUser {
     phone: user.phone?.value ?? null,
     cityId: user.cityId,
     roles: user.roles,
+    marketingOptOut: user.marketingOptOut,
     isNew,
   };
 }

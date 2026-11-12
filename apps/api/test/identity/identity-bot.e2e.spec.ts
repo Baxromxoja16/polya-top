@@ -177,7 +177,24 @@ describe('Identity bot (e2e): TZ ID-1…ID-6', () => {
     it('shows settings with phone and language', async () => {
       const out = await sim(2002).send('⚙️ Sozlamalar');
       expect(texts(out)[0]).toContain('📱 Telefon: +998 90 123 45 67');
-      expect(buttons(out)).toEqual(['id:lang', 'id:phone', 'id:name', 'id:city']);
+      expect(buttons(out)).toEqual(['id:lang', 'id:phone', 'id:name', 'id:city', 'id:mkt:off:s']);
+    });
+
+    it('MK-4: marketing can be turned off and on again from settings', async () => {
+      const u = sim(2002);
+      const off = await u.press('id:mkt:off:s');
+      expect(off.find((c) => c.method === 'answerCallbackQuery')?.payload.text).toContain('🔕');
+      expect((await users().findOne({ telegramId: 2002 }))?.marketingOptOut).toBe(true);
+      expect(buttons(off)).toContain('id:mkt:on:s');
+      await u.press('id:mkt:on:s');
+      expect((await users().findOne({ telegramId: 2002 }))?.marketingOptOut).toBe(false);
+    });
+
+    it('MK-4: the 🔕 button under a marketing message opts out and offers to undo', async () => {
+      const out = await sim(2002).press('id:mkt:off');
+      expect(buttons(out)).toEqual(['id:mkt:on']);
+      expect((await users().findOne({ telegramId: 2002 }))?.marketingOptOut).toBe(true);
+      await sim(2002).press('id:mkt:on');
     });
 
     it('rejects an invalid name and accepts a valid one', async () => {

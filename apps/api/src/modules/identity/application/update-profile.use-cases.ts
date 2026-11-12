@@ -49,6 +49,16 @@ export class RenameUserUseCase extends UserCommand {
   }
 }
 
+/** TZ MK-4: marketing xabarlarini o'chirish/yoqish */
+@Injectable()
+export class SetMarketingOptOutUseCase extends UserCommand {
+  async execute(input: { telegramId: number; optOut: boolean }): Promise<User> {
+    const user = await this.load(input.telegramId);
+    if (user.setMarketingOptOut(input.optOut, this.clock.now())) await this.users.save(user);
+    return user;
+  }
+}
+
 /** TZ ID-6, EC-T1: foydalanuvchi botni bloklagan/blokdan chiqargan. */
 @Injectable()
 export class SetBotBlockedUseCase extends UserCommand {

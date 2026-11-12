@@ -18,6 +18,7 @@ import {
   ChangeLanguageUseCase,
   RenameUserUseCase,
   SetBotBlockedUseCase,
+  SetMarketingOptOutUseCase,
 } from '../../application/update-profile.use-cases.js';
 import type { User } from '../../domain/user.js';
 import { toCurrentUser } from './identity.context.js';
@@ -33,6 +34,8 @@ const CB = {
   name: 'id:name',
   pickCity: 'id:city',
   setCity: /^id:city:([0-9a-f]{24})(:new)?$/,
+  /** TZ MK-4: marketing xabaridagi `🔕` tugmasi va sozlamalar (`:s` — sozlamalar ekranidan) */
+  marketing: /^id:mkt:(on|off)(:s)?$/,
 } as const;
 
 const LOOKS_LIKE_PHONE = /^[+\d][\d\s()-]{6,}$/;
@@ -48,6 +51,7 @@ export class IdentityBotFeature implements BotFeature {
     private readonly phoneGate: PhoneGate,
     private readonly changeCity: ChangeCityUseCase,
     private readonly cities: CityCatalog,
+    private readonly setMarketing: SetMarketingOptOutUseCase,
   ) {}
 
   register(bot: Composer<BotContext>): void {
@@ -113,6 +117,19 @@ export class IdentityBotFeature implements BotFeature {
     });
 
     bot.hears(menuLabels('settings'), (ctx) => this.showSettings(ctx));
+
+    bot.callbackQuery(CB.marketing, async (ctx) => {
+      const optOut = ctx.match[1] === 'off';
+      const user = await this.setMarketing.execute({ telegramId: ctx.from.id, optOut });
+      if (ctx.currentUser) ctx.currentUser = toCurrentUser(user, false);
+      const m = identityMessages[ctx.lang];
+      await ctx.answerCallbackQuery({ text: optOut ? m.marketingOff : m.marketingOn });
+      if (ctx.match[2]) await this.showSettings(ctx, true);
+      else if (optOut)
+        await ctx.editMessageReplyMarkup({
+          reply_markup: new InlineKeyboard().text(m.btnMarketingOn, 'id:mkt:on'),
+        });
+    });
 
     bot.callbackQuery(CB.phone, async (ctx) => {
       await ctx.answerCallbackQuery();
@@ -210,10 +227,11 @@ export class IdentityBotFeature implements BotFeature {
     return (await this.cities.activeCities()).find((c) => c.id === id)?.name[ctx.lang] ?? null;
   }
 
-  private async showSettings(ctx: BotContext): Promise<void> {
+  private async showSettings(ctx: BotContext, edit = false): Promise<void> {
     const m = identityMessages[ctx.lang];
     const phone = ctx.currentUser?.phone;
-    await ctx.reply(
+    const optOut = ctx.currentUser?.marketingOptOut ?? false;
+    await (edit ? ctx.editMessageText.bind(ctx) : ctx.reply.bind(ctx))(
       m.settings(
         this.nameOf(ctx),
         phone ? PhoneNumber.parse(phone).format() : m.notSet,
@@ -228,7 +246,12 @@ export class IdentityBotFeature implements BotFeature {
           .row()
           .text(m.btnName, CB.name)
           .row()
-          .text(m.btnCity, CB.pickCity),
+          .text(m.btnCity, CB.pickCity)
+          .row()
+          .text(
+            optOut ? m.btnMarketingOn : m.btnMarketingOff,
+            optOut ? 'id:mkt:on:s' : 'id:mkt:off:s',
+          ),
       },
     );
   }

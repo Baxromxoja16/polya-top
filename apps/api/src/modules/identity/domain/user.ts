@@ -41,6 +41,8 @@ export interface UserProps {
   status: UserStatus;
   /** Foydalanuvchi botni bloklagan (TZ ID-6): xabarnomalar yuborilmaydi. */
   botBlocked: boolean;
+  /** TZ MK-4: marketing xabarlaridan voz kechgan (tranzaksion xabarlar bunga bog'liq emas, MK-1) */
+  marketingOptOut: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -79,6 +81,7 @@ export class User extends AggregateRoot<UserId> {
         roles: ['PLAYER'],
         status: 'ACTIVE',
         botBlocked: false,
+        marketingOptOut: false,
         createdAt: params.now,
         updatedAt: params.now,
       },
@@ -128,6 +131,9 @@ export class User extends AggregateRoot<UserId> {
   }
   get botBlocked(): boolean {
     return this.#props.botBlocked;
+  }
+  get marketingOptOut(): boolean {
+    return this.#props.marketingOptOut;
   }
   get createdAt(): Date {
     return this.#props.createdAt;
@@ -281,6 +287,14 @@ export class User extends AggregateRoot<UserId> {
         payload: {},
       }),
     );
+    return true;
+  }
+
+  /** TZ MK-4: `🔕` tugmasi yoki sozlamalardan */
+  setMarketingOptOut(optOut: boolean, now: Date): boolean {
+    if (this.#props.marketingOptOut === optOut) return false;
+    this.#props.marketingOptOut = optOut;
+    this.touch(now);
     return true;
   }
 

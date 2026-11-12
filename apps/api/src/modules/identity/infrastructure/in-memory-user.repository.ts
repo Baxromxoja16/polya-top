@@ -71,6 +71,7 @@ function snapshot(user: User): UserProps {
     roles: [...user.roles],
     status: user.status,
     botBlocked: user.botBlocked,
+    marketingOptOut: user.marketingOptOut,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };

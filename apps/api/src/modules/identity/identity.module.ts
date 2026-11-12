@@ -18,6 +18,7 @@ import {
   ChangeLanguageUseCase,
   RenameUserUseCase,
   SetBotBlockedUseCase,
+  SetMarketingOptOutUseCase,
 } from './application/update-profile.use-cases.js';
 import { OwnerApplicationRepository } from './domain/owner-application.js';
 import { UserRepository } from './domain/user.repository.js';
@@ -62,6 +63,7 @@ import { PhoneGate } from './interface/telegram/phone-gate.js';
     ChangeLanguageUseCase,
     RenameUserUseCase,
     SetBotBlockedUseCase,
+    SetMarketingOptOutUseCase,
     PhoneGate,
     IdentityContextFeature,
     IdentityBotFeature,

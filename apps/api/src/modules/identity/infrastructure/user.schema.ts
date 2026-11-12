@@ -17,6 +17,7 @@ export interface UserDocument {
   roles: string[];
   status: string;
   botBlocked: boolean;
+  marketingOptOut: boolean;
   createdAt: Date;
   updatedAt: Date;
   /** Optimistic concurrency versiyasi (aggregate.version + 1 saqlangandan keyin). */
@@ -37,6 +38,7 @@ export const UserSchema = new Schema<UserDocument>(
     roles: { type: [String], default: [] },
     status: { type: String, required: true },
     botBlocked: { type: Boolean, default: false },
+    marketingOptOut: { type: Boolean, default: false },
     createdAt: { type: Date, required: true },
     updatedAt: { type: Date, required: true },
     version: { type: Number, required: true },

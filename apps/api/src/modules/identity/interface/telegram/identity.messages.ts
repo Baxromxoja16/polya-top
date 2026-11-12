@@ -23,6 +23,10 @@ export const identityMessages = defineMessages(
     btnLanguage: "🌐 Tilni o'zgartirish",
     btnPhone: '📱 Telefon raqam',
     btnName: "✏️ Ismni o'zgartirish",
+    btnMarketingOff: "🔕 Yangiliklar va aksiyalarni o'chirish",
+    btnMarketingOn: '🔔 Yangiliklar va aksiyalarni yoqish',
+    marketingOff: "🔕 Yangiliklar va aksiyalar o'chirildi. Bandlov xabarlari kelaveradi.",
+    marketingOn: '🔔 Yangiliklar va aksiyalar yoqildi',
 
     askPhone:
       "📱 Bandlash uchun telefon raqamingiz kerak. Raqamingiz faqat siz so'rov yuborgan " +
@@ -61,6 +65,10 @@ export const identityMessages = defineMessages(
     btnLanguage: '🌐 Сменить язык',
     btnPhone: '📱 Номер телефона',
     btnName: '✏️ Изменить имя',
+    btnMarketingOff: '🔕 Отключить новости и акции',
+    btnMarketingOn: '🔔 Включить новости и акции',
+    marketingOff: '🔕 Новости и акции отключены. Уведомления о бронях будут приходить.',
+    marketingOn: '🔔 Новости и акции включены',
 
     askPhone:
       '📱 Для бронирования нужен ваш номер телефона. Его увидит только владелец стадиона, ' +

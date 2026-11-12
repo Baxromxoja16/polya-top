@@ -13,6 +13,8 @@ export interface CurrentUser {
   phone: string | null;
   cityId: string | null;
   roles: readonly string[];
+  /** TZ MK-4 */
+  marketingOptOut: boolean;
   /** Shu update'da yaratildi (birinchi /start). */
   isNew: boolean;
 }
