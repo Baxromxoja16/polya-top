@@ -6,7 +6,7 @@ import {
   type OnApplicationShutdown,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { addDays, Clock, PhoneNumber, zonedParts } from '@polya/shared-kernel';
+import { addDays, Clock, PhoneNumber, TimeRange, zonedParts } from '@polya/shared-kernel';
 import { InlineKeyboard } from 'grammy';
 import type { Redis } from 'ioredis';
 import type { Env } from '../../../config/env.schema.js';
@@ -14,12 +14,15 @@ import { REDIS } from '../../../platform/redis/redis.module.js';
 import { TelegramMessenger } from '../../../platform/telegram/telegram-messenger.js';
 import { CatalogQueries } from '../../catalog/index.js';
 import { IdentityQueries } from '../../identity/index.js';
+import { SLOT_MINUTES } from '../../scheduling/index.js';
 import { BookingService } from '../application/booking.service.js';
+import { SlotWatchService } from '../application/slot-watch.service.js';
 import type { Booking } from '../domain/booking.js';
 import { bookingMessages, ownerText } from './telegram/booking.messages.js';
 import { BookingFlowBotFeature } from './telegram/booking-flow.bot.js';
 import { formatRange, formatTime } from './telegram/booking-format.js';
 import { STATUS_ICON } from './telegram/my-bookings.bot.js';
+import { freedKeyboard, watchMessages } from './telegram/slot-watch.bot.js';
 
 /** TZ 4.6: Owner'ga ertangi jadval shu soatdan keyin (shahar vaqti) */
 const DAILY_HOUR = 21;
@@ -30,6 +33,7 @@ export interface SweepReport {
   reminders: number;
   nudges: number;
   daily: number;
+  watches: number;
 }
 
 /**
@@ -52,6 +56,7 @@ export class BookingSweeper implements OnApplicationBootstrap, OnApplicationShut
     private readonly config: ConfigService<Env, true>,
     private readonly clock: Clock,
     @Inject(REDIS) private readonly redis: Redis,
+    private readonly watches: SlotWatchService,
   ) {}
 
   onApplicationBootstrap(): void {
@@ -64,7 +69,14 @@ export class BookingSweeper implements OnApplicationBootstrap, OnApplicationShut
   }
 
   async run(): Promise<SweepReport> {
-    const report: SweepReport = { expired: 0, completed: 0, reminders: 0, nudges: 0, daily: 0 };
+    const report: SweepReport = {
+      expired: 0,
+      completed: 0,
+      reminders: 0,
+      nudges: 0,
+      daily: 0,
+      watches: 0,
+    };
     if (this.#running) return report;
     this.#running = true;
     try {
@@ -76,6 +88,7 @@ export class BookingSweeper implements OnApplicationBootstrap, OnApplicationShut
       for (const b of await this.bookings.dueOwnerNudges())
         if (await this.nudgeOwner(b)) report.nudges++;
       report.daily = await this.dailySchedules();
+      report.watches = await this.notifyWatchers();
       return report;
     } catch (error) {
       this.#logger.error({ err: error }, 'Booking sweep failed');
@@ -100,6 +113,29 @@ export class BookingSweeper implements OnApplicationBootstrap, OnApplicationShut
           });
     });
     return true;
+  }
+
+  /** TZ VC-5d: bo'shagan slot — navbatdagi obunachiga (tranzaksion, MK-1) */
+  private async notifyWatchers(): Promise<number> {
+    let sent = 0;
+    for (const w of await this.watches.dueNotifications()) {
+      const [c, user] = await Promise.all([
+        this.catalog.pitchContext(w.pitchId),
+        this.identity.contactOf(w.userId),
+      ]);
+      if (!c || !user) continue;
+      const range = TimeRange.ofDuration(w.slotStart, SLOT_MINUTES);
+      await this.messenger.send(
+        user.telegramId,
+        watchMessages[user.language].freed({
+          venue: `${c.venue.name} · ${c.pitchName}`,
+          when: formatRange(range, c.timeZone, user.language),
+        }),
+        freedKeyboard(user.language, w.pitchId, w.slotStart),
+      );
+      sent++;
+    }
+    return sent;
   }
 
   /** TZ BK-3f: muddati tugashiga oz qolgan so'rov — Owner'ga tugmalar bilan qayta */

@@ -5,7 +5,9 @@ import { IdentityModule } from '../identity/index.js';
 import { OccupancyRegistry, SchedulingModule } from '../scheduling/index.js';
 import { BookingQueries } from './application/booking.queries.js';
 import { BookingService } from './application/booking.service.js';
+import { SlotWatchService } from './application/slot-watch.service.js';
 import { BookingStore } from './domain/booking-store.js';
+import { SlotWatchStore } from './domain/slot-watch.js';
 import {
   BLOCK_MODEL,
   BlockSchema,
@@ -15,10 +17,16 @@ import {
   SlotLockSchema,
 } from './infrastructure/booking.schemas.js';
 import { MongoBookingStore } from './infrastructure/mongo-booking.store.js';
+import {
+  MongoSlotWatchStore,
+  SLOT_WATCH_MODEL,
+  SlotWatchSchema,
+} from './infrastructure/mongo-slot-watch.store.js';
 import { BookingSweeper } from './interface/booking-sweeper.js';
 import { BookingFlowBotFeature } from './interface/telegram/booking-flow.bot.js';
 import { MyBookingsBotFeature } from './interface/telegram/my-bookings.bot.js';
 import { OwnerBookingsBotFeature } from './interface/telegram/owner-bookings.bot.js';
+import { SlotWatchBotFeature } from './interface/telegram/slot-watch.bot.js';
 
 /** Booking (TZ 4.4) — core domain. */
 @Module({
@@ -27,6 +35,7 @@ import { OwnerBookingsBotFeature } from './interface/telegram/owner-bookings.bot
       { name: BOOKING_MODEL, schema: BookingSchema },
       { name: SLOT_LOCK_MODEL, schema: SlotLockSchema },
       { name: BLOCK_MODEL, schema: BlockSchema },
+      { name: SLOT_WATCH_MODEL, schema: SlotWatchSchema },
     ]),
     CatalogModule,
     SchedulingModule,
@@ -34,6 +43,9 @@ import { OwnerBookingsBotFeature } from './interface/telegram/owner-bookings.bot
   ],
   providers: [
     { provide: BookingStore, useClass: MongoBookingStore },
+    { provide: SlotWatchStore, useClass: MongoSlotWatchStore },
+    SlotWatchService,
+    SlotWatchBotFeature,
     BookingService,
     BookingQueries,
     BookingFlowBotFeature,

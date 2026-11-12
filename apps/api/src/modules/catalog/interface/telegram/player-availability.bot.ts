@@ -202,7 +202,10 @@ export class PlayerAvailabilityBotFeature implements BotFeature {
     slots.forEach((s, i) => {
       kb.text(
         `${ICON[s.status]} ${hh(s.hour)}`,
-        s.status === 'BOOKED' ? 'bk:x' : slotCallback(pitchId, s),
+        // VC-5d: band slot — "Bo'shasa xabar ber" (Booking konteksti)
+        s.status === 'BOOKED'
+          ? `bk:w:${pitchId}:${Math.floor(s.start.getTime() / 1000)}`
+          : slotCallback(pitchId, s),
       );
       if (i % 4 === 3) kb.row();
     });

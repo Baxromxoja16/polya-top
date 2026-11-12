@@ -166,9 +166,11 @@ describe('Booking via bot (e2e): TZ BK-1…BK-4, Q1 (queue + contact exchange)',
     const grid = await ali.press(`cat:avd:${pitchId}:${day}`);
     const markup =
       grid.find((c) => c.payload.reply_markup)?.payload.reply_markup?.inline_keyboard?.flat() ?? [];
-    expect(markup.find((b: { callback_data: string }) => b.callback_data === 'bk:x')?.text).toBe(
-      '🔴 20:00',
-    );
+    expect(
+      markup.find(
+        (b: { callback_data: string }) => b.callback_data === `bk:w:${pitchId}:${sec(20)}`,
+      )?.text,
+    ).toBe('🔴 20:00');
     expect(texts(await ali.press(`bk:t:${pitchId}:${sec(20)}`))[0]).toContain(
       'hozirgina band qilindi',
     );
