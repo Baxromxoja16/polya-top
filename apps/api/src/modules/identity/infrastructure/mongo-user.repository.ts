@@ -1,7 +1,8 @@
 import { Injectable, type OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { ConcurrencyConflictError, DEFAULT_LANGUAGE, isLanguage } from '@polya/shared-kernel';
+import { DEFAULT_LANGUAGE, isLanguage } from '@polya/shared-kernel';
 import { type Model, Types } from 'mongoose';
+import { isDuplicateKeyError, saveVersioned } from '../../../platform/database/versioned-save.js';
 import { PhoneNumber } from '../domain/phone-number.js';
 import { ROLES, type Role, type TelegramId, User, type UserId } from '../domain/user.js';
 import {
@@ -38,18 +39,7 @@ export class MongoUserRepository extends UserRepository implements OnModuleInit 
   async save(user: User): Promise<void> {
     const doc = toDocument(user);
     try {
-      if (user.version === 0) {
-        await this.model.collection.insertOne(doc);
-      } else {
-        const { _id, ...fields } = doc;
-        const result = await this.model.collection.updateOne(
-          { _id, version: user.version },
-          { $set: fields },
-        );
-        if (result.matchedCount === 0) {
-          throw new ConcurrencyConflictError('User was modified concurrently', { id: user.id });
-        }
-      }
+      await saveVersioned(this.model, doc, user.version);
     } catch (error) {
       throw translateDuplicateKey(error);
     }
@@ -104,17 +94,9 @@ function toDomain(doc: UserDocument | null): User | null {
 }
 
 function translateDuplicateKey(error: unknown): unknown {
-  if (!isDuplicateKey(error)) return error;
-  const pattern = error.keyPattern ?? {};
-  if ('phone' in pattern)
+  if (!isDuplicateKeyError(error)) return error;
+  if ('phone' in (error.keyPattern ?? {})) {
     return new PhoneAlreadyTakenError('Phone already belongs to another user');
-  return new UserAlreadyExistsError('User already exists', { keyPattern: pattern });
-}
-
-function isDuplicateKey(
-  error: unknown,
-): error is { code: number; keyPattern?: Record<string, unknown> } {
-  return (
-    typeof error === 'object' && error !== null && (error as { code?: unknown }).code === 11000
-  );
+  }
+  return new UserAlreadyExistsError('User already exists', { keyPattern: error.keyPattern });
 }
