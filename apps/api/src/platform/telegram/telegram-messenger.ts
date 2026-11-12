@@ -24,9 +24,21 @@ interface OutgoingMessage {
   text: string;
   // biome-ignore lint/suspicious/noExplicitAny: InlineKeyboard JSON ko'rinishi
   replyMarkup?: any;
+  /** Yetkazish natijasini kimga tegishli ekanini bildiradi (masalan, kampaniya — MK-7) */
+  tag?: string;
 }
 
 type BlockedListener = (chatId: number) => Promise<void>;
+
+export type DeliveryOutcome = 'delivered' | 'blocked' | 'failed';
+type OutcomeListener = (tag: string, chatId: number, outcome: DeliveryOutcome) => Promise<void>;
+
+export interface SendOptions {
+  /** Teglangan xabarlar natijasi `onOutcome` tinglovchilariga boradi */
+  tag?: string;
+}
+
+const BLOCKED = 'BOT_BLOCKED';
 
 /**
  * Boshqa foydalanuvchilarga xabar yuborish (TZ 4.6).
@@ -39,6 +51,7 @@ type BlockedListener = (chatId: number) => Promise<void>;
 export class TelegramMessenger implements OnModuleInit, OnApplicationShutdown {
   readonly #logger = new Logger(TelegramMessenger.name);
   readonly #blockedListeners: BlockedListener[] = [];
+  readonly #outcomeListeners: OutcomeListener[] = [];
   #queue: Queue<OutgoingMessage> | null = null;
   #worker: Worker<OutgoingMessage> | null = null;
   #connection: Redis | null = null;
@@ -63,12 +76,17 @@ export class TelegramMessenger implements OnModuleInit, OnApplicationShutdown {
       concurrency: 5,
       limiter: { max: GLOBAL_PER_SECOND, duration: 1_000 },
     });
-    this.#worker.on('failed', (job, error) =>
+    this.#worker.on('completed', (job) => void this.report(job.data, 'delivered'));
+    this.#worker.on('failed', (job, error) => {
       this.#logger.warn(
         { err: error, chatId: job?.data.chatId, attempts: job?.attemptsMade },
         'Delivery failed',
-      ),
-    );
+      );
+      if (!job) return;
+      const final =
+        error instanceof UnrecoverableError || job.attemptsMade >= (job.opts.attempts ?? 1);
+      if (final) void this.report(job.data, error.message === BLOCKED ? 'blocked' : 'failed');
+    });
   }
 
   async onApplicationShutdown(): Promise<void> {
@@ -82,12 +100,23 @@ export class TelegramMessenger implements OnModuleInit, OnApplicationShutdown {
     this.#blockedListeners.push(listener);
   }
 
+  /** MK-7: teglangan xabarlarning yakuniy natijasi (navbat rejimida — asinxron) */
+  onOutcome(listener: OutcomeListener): void {
+    this.#outcomeListeners.push(listener);
+  }
+
   /** @returns qabul qilindi (navbatga qo'yildi yoki yuborildi) */
-  async send(chatId: number, text: string, keyboard?: InlineKeyboard): Promise<boolean> {
+  async send(
+    chatId: number,
+    text: string,
+    keyboard?: InlineKeyboard,
+    options: SendOptions = {},
+  ): Promise<boolean> {
     const message: OutgoingMessage = {
       chatId,
       text,
       ...(keyboard ? { replyMarkup: keyboard } : {}),
+      ...(options.tag ? { tag: options.tag } : {}),
     };
     if (this.#queue) {
       await this.#queue.add('send', message, {
@@ -100,10 +129,12 @@ export class TelegramMessenger implements OnModuleInit, OnApplicationShutdown {
     }
     try {
       await this.deliver(message);
+      await this.report(message, 'delivered');
       return true;
     } catch (error) {
-      await this.classify(error, message.chatId);
+      const verdict = await this.classify(error, message.chatId);
       this.#logger.warn({ err: error, chatId }, 'Message was not delivered');
+      await this.report(message, verdict.blocked ? 'blocked' : 'failed');
       return false;
     }
   }
@@ -139,9 +170,18 @@ export class TelegramMessenger implements OnModuleInit, OnApplicationShutdown {
         await job.moveToDelayed(Date.now() + verdict.retryAfterSec * 1_000, token);
         throw new DelayedError();
       }
-      if (verdict.permanent) throw new UnrecoverableError(String(error));
+      if (verdict.permanent)
+        throw new UnrecoverableError(verdict.blocked ? BLOCKED : String(error));
       throw error;
     }
+  }
+
+  private async report(message: OutgoingMessage, outcome: DeliveryOutcome): Promise<void> {
+    if (!message.tag) return;
+    for (const listener of this.#outcomeListeners)
+      await listener(message.tag, message.chatId, outcome).catch((err: unknown) =>
+        this.#logger.warn({ err, tag: message.tag }, 'Outcome listener failed'),
+      );
   }
 
   private async deliver(message: OutgoingMessage): Promise<void> {
@@ -156,15 +196,16 @@ export class TelegramMessenger implements OnModuleInit, OnApplicationShutdown {
   private async classify(
     error: unknown,
     chatId: number,
-  ): Promise<{ permanent: boolean; retryAfterSec: number | null }> {
-    if (!(error instanceof GrammyError)) return { permanent: false, retryAfterSec: null };
+  ): Promise<{ permanent: boolean; blocked: boolean; retryAfterSec: number | null }> {
+    const transient = { permanent: false, blocked: false, retryAfterSec: null };
+    if (!(error instanceof GrammyError)) return transient;
     if (error.error_code === 429)
-      return { permanent: false, retryAfterSec: error.parameters.retry_after ?? 5 };
+      return { ...transient, retryAfterSec: error.parameters.retry_after ?? 5 };
     if (error.error_code === 403) {
       for (const listener of this.#blockedListeners) await listener(chatId).catch(() => undefined);
-      return { permanent: true, retryAfterSec: null };
+      return { permanent: true, blocked: true, retryAfterSec: null };
     }
-    if (error.error_code === 400) return { permanent: true, retryAfterSec: null };
-    return { permanent: false, retryAfterSec: null };
+    if (error.error_code === 400) return { ...transient, permanent: true };
+    return transient;
   }
 }

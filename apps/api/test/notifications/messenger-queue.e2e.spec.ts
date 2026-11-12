@@ -60,6 +60,21 @@ describe('TelegramMessenger in queue mode (e2e): TZ 4.6, EC-T1, EC-T2', () => {
     expect(sends(calls, 7_000_001).filter((c) => c.payload.text === 'eslatma')).toHaveLength(1);
   });
 
+  it('MK-7: tagged messages report delivered / blocked outcomes', async () => {
+    const outcomes: string[] = [];
+    messenger.onOutcome(async (tag, chatId, outcome) => {
+      outcomes.push(`${tag}:${chatId}:${outcome}`);
+    });
+    failNext(7_000_041, { error_code: 403, description: 'Forbidden: bot was blocked by the user' });
+    await messenger.send(7_000_040, 'aksiya', undefined, { tag: 'c1' });
+    await messenger.send(7_000_041, 'aksiya', undefined, { tag: 'c1' });
+    await messenger.send(7_000_042, 'tegsiz');
+    await vi.waitFor(
+      () => expect(outcomes.sort()).toEqual(['c1:7000040:delivered', 'c1:7000041:blocked']),
+      { timeout: 10_000 },
+    );
+  });
+
   it('EC-T2: 429 waits retry_after and then delivers', async () => {
     failNext(7_000_020, {
       error_code: 429,
