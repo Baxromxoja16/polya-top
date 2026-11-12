@@ -114,9 +114,4 @@ describe('Player availability (e2e): TZ 5.2, VC-5b, VC-6, SP-8', () => {
     const grid = await player.press(`cat:avd:${closedTomorrowPitch}:${tomorrow()}`);
     expect(texts(grid)[0]).toContain("bo'sh vaqt yo'q");
   });
-
-  it('until Booking exists, a slot button explains booking is coming', async () => {
-    const out = await player.press(`bk:t:${openPitch}:123`);
-    expect(out[0]).toMatchObject({ method: 'answerCallbackQuery', payload: { show_alert: true } });
-  });
 });

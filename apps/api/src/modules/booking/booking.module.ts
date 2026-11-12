@@ -1,6 +1,7 @@
 import { Module, type OnModuleInit } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CatalogModule } from '../catalog/index.js';
+import { IdentityModule } from '../identity/index.js';
 import { OccupancyRegistry, SchedulingModule } from '../scheduling/index.js';
 import { BookingQueries } from './application/booking.queries.js';
 import { BookingService } from './application/booking.service.js';
@@ -14,6 +15,7 @@ import {
   SlotLockSchema,
 } from './infrastructure/booking.schemas.js';
 import { MongoBookingStore } from './infrastructure/mongo-booking.store.js';
+import { BookingFlowBotFeature } from './interface/telegram/booking-flow.bot.js';
 
 /** Booking (TZ 4.4) — core domain. */
 @Module({
@@ -25,11 +27,13 @@ import { MongoBookingStore } from './infrastructure/mongo-booking.store.js';
     ]),
     CatalogModule,
     SchedulingModule,
+    IdentityModule,
   ],
   providers: [
     { provide: BookingStore, useClass: MongoBookingStore },
     BookingService,
     BookingQueries,
+    BookingFlowBotFeature,
   ],
   exports: [BookingService, BookingQueries],
 })

@@ -40,7 +40,6 @@ const m = defineMessages(
     soonTitle: "⚡ Keyingi 3 soatda bo'sh maydonlar:",
     soonEmpty: "😕 Yaqin 3 soatda bo'sh maydon yo'q.",
     bookedAlert: 'Bu vaqt band.',
-    bookingSoon: "🚧 Bandlash tez orada ishga tushadi. Hozircha telefon orqali bog'laning.",
     noCity: 'Avval shahringizni tanlang: ⚙️ Sozlamalar → 🏙 Shahar.',
   },
   {
@@ -58,7 +57,6 @@ const m = defineMessages(
     soonTitle: '⚡ Свободные поля в ближайшие 3 часа:',
     soonEmpty: '😕 В ближайшие 3 часа свободных полей нет.',
     bookedAlert: 'Это время занято.',
-    bookingSoon: '🚧 Бронирование скоро заработает. Пока свяжитесь по телефону.',
     noCity: 'Сначала выберите город: ⚙️ Настройки → 🏙 Город.',
   },
 );
@@ -163,10 +161,6 @@ export class PlayerAvailabilityBotFeature implements BotFeature {
     });
 
     bot.callbackQuery('bk:x', (ctx) => ctx.answerCallbackQuery({ text: m[ctx.lang].bookedAlert }));
-    // Booking konteksti (4-bosqich) ulanguncha — vaqtinchalik javob
-    bot.callbackQuery(/^bk:t:/, (ctx) =>
-      ctx.answerCallbackQuery({ text: m[ctx.lang].bookingSoon, show_alert: true }),
-    );
   }
 
   private async chooseDate(ctx: BotContext): Promise<void> {
