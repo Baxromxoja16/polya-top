@@ -12,6 +12,7 @@ import {
   MongoCityRepository,
   MongoLandmarkRepository,
 } from './infrastructure/mongo-geography.repositories.js';
+import { GeographyAdminBotFeature } from './interface/telegram/geography-admin.bot.js';
 
 /** Geography (TZ 4.2.1): shaharlar, hududlar, orientirlar. Faqat Admin boshqaradi. */
 @Module({
@@ -26,6 +27,7 @@ import {
     { provide: LandmarkRepository, useClass: MongoLandmarkRepository },
     GeographyAdminService,
     GeographyQueries,
+    GeographyAdminBotFeature,
   ],
   exports: [GeographyQueries, GeographyAdminService],
 })

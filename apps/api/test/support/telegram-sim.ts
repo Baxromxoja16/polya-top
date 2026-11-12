@@ -111,6 +111,34 @@ export class TelegramUserSim {
     } as Omit<Update, 'update_id'>);
   }
 
+  sendLocation(latitude: number, longitude: number) {
+    return this.act({
+      message: {
+        message_id: nextUpdateId(),
+        date: Math.floor(Date.now() / 1000),
+        chat: this.chat,
+        from: this.from,
+        location: { latitude, longitude },
+      },
+    } as Omit<Update, 'update_id'>);
+  }
+
+  sendPhoto(fileId: string, caption?: string) {
+    return this.act({
+      message: {
+        message_id: nextUpdateId(),
+        date: Math.floor(Date.now() / 1000),
+        chat: this.chat,
+        from: this.from,
+        photo: [
+          { file_id: `${fileId}-small`, file_unique_id: `${fileId}-s`, width: 90, height: 90 },
+          { file_id: fileId, file_unique_id: `${fileId}-u`, width: 1280, height: 960 },
+        ],
+        ...(caption ? { caption } : {}),
+      },
+    } as Omit<Update, 'update_id'>);
+  }
+
   /** `userId: null` — Telegram user'ga bog'lanmagan kontakt kartochkasi (qo'lda yozilgan). */
   shareContact(phoneNumber: string, userId: number | null = this.id) {
     return this.act({
