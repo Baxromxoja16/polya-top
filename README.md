@@ -47,7 +47,16 @@ packages/contracts/       API sxemalari (Zod) — backend va React uchun umumiy
 docs/                     TZ va ADR'lar
 ```
 
-## Endpointlar (0-bosqich)
+## Botni lokal ishga tushirish
+
+1. [@BotFather](https://t.me/BotFather) → `/newbot` → token oling.
+2. `apps/api/.env` faylida: `TELEGRAM_MODE=polling` va `TELEGRAM_BOT_TOKEN=<token>`.
+3. `pnpm infra:up && pnpm dev` → botga `/start` yozing.
+
+Polling rejimida ochiq URL kerak emas. Produksiyada `TELEGRAM_MODE=webhook`, `TELEGRAM_WEBHOOK_SECRET` va `PUBLIC_URL` (https) ishlatiladi. Bot arxitekturasi: [ADR-0005](docs/adr/0005-telegram-bot-architecture.md).
+
+## Endpointlar
 - `GET /health/live` — liveness (process tirikmi)
 - `GET /health` — readiness (Mongo + Redis)
+- `POST /api/v1/telegram/webhook` — Telegram webhook (faqat `TELEGRAM_MODE=webhook`)
 - Biznes API: `/api/v1/*`. Xatolar RFC 9457 `application/problem+json` formatida, har bir javobda `x-request-id` bor.

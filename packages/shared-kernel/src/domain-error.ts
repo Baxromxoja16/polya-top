@@ -17,3 +17,11 @@ export abstract class DomainError extends Error {
 export class InvariantViolationError extends DomainError {
   readonly code = 'INVARIANT_VIOLATION';
 }
+
+/**
+ * Optimistic concurrency: aggregate o'qilgandan keyin uni boshqa jarayon o'zgartirgan (TZ EC-B3, EC-B4).
+ * Chaqiruvchi qayta o'qib, haqiqiy holatni foydalanuvchiga ko'rsatadi.
+ */
+export class ConcurrencyConflictError extends DomainError {
+  readonly code = 'CONCURRENCY_CONFLICT';
+}

@@ -2,9 +2,11 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { validateEnv } from './config/env.schema.js';
 import { HealthModule } from './health/health.module.js';
+import { IdentityModule } from './modules/identity/index.js';
 import { DatabaseModule } from './platform/database/database.module.js';
 import { LoggerModule } from './platform/logging/logger.module.js';
 import { RedisModule } from './platform/redis/redis.module.js';
+import { TelegramModule } from './platform/telegram/telegram.module.js';
 import { ClockModule } from './platform/time/clock.module.js';
 
 /**
@@ -17,7 +19,9 @@ import { ClockModule } from './platform/time/clock.module.js';
     DatabaseModule,
     RedisModule,
     ClockModule,
+    TelegramModule,
     HealthModule,
+    IdentityModule,
   ],
 })
 export class AppModule {}

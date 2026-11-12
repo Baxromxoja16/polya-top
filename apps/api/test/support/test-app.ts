@@ -1,7 +1,10 @@
+import type { Provider } from '@nestjs/common';
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
 import { MongoDBContainer, type StartedMongoDBContainer } from '@testcontainers/mongodb';
 import { RedisContainer, type StartedRedisContainer } from '@testcontainers/redis';
+import type { Bot } from 'grammy';
+import type { BotContext } from '../../src/platform/telegram/bot-context.js';
 
 /** docker-compose.yml bilan bir xil image'lar — testlar produksiya versiyasida o'tadi. */
 export const MONGO_IMAGE = 'mongo:8.2';
@@ -27,23 +30,39 @@ export async function startInfra(): Promise<Infra> {
   };
 }
 
+export interface TestAppOptions {
+  /** Haqiqiy bot o'rniga — Telegram API'ga chiqmaydigan test bot. */
+  bot?: Bot<BotContext>;
+  /** Faqat testlar uchun qo'shimcha provider'lar (masalan, test bot feature). */
+  providers?: Provider[];
+  // biome-ignore lint/suspicious/noExplicitAny: Nest module class
+  imports?: any[];
+}
+
 /**
  * Ilovani main.ts bilan bir xil sozlamada ko'taradi.
  * ConfigModule env'ni modul import qilingan paytda o'qiydi, shuning uchun AppModule
  * env o'rnatilgandan KEYIN dinamik import qilinadi.
  */
-export async function createTestApp(env: {
-  MONGO_URI: string;
-  REDIS_URL: string;
-}): Promise<NestFastifyApplication> {
+export async function createTestApp(
+  env: Record<string, string>,
+  options: TestAppOptions = {},
+): Promise<NestFastifyApplication> {
   Object.assign(process.env, { NODE_ENV: 'test', LOG_LEVEL: 'silent', ...env });
 
   const { AppModule } = await import('../../src/app.module.js');
   const { configureApp, createFastifyAdapter } = await import(
     '../../src/bootstrap/configure-app.js'
   );
+  const { BOT } = await import('../../src/platform/telegram/telegram.tokens.js');
 
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+  let builder = Test.createTestingModule({
+    imports: [AppModule, ...(options.imports ?? [])],
+    providers: options.providers ?? [],
+  });
+  if (options.bot) builder = builder.overrideProvider(BOT).useValue(options.bot);
+
+  const moduleRef = await builder.compile();
   const app = moduleRef.createNestApplication<NestFastifyApplication>(createFastifyAdapter(), {
     bufferLogs: true,
   });

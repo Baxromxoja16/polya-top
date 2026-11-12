@@ -1,0 +1,33 @@
+import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
+import { EnsureUserUseCase } from './application/ensure-user.use-case.js';
+import { ShareContactUseCase } from './application/share-contact.use-case.js';
+import {
+  ChangeLanguageUseCase,
+  RenameUserUseCase,
+  SetBotBlockedUseCase,
+} from './application/update-profile.use-cases.js';
+import { UserRepository } from './domain/user.repository.js';
+import { MongoUserRepository } from './infrastructure/mongo-user.repository.js';
+import { USER_MODEL, UserSchema } from './infrastructure/user.schema.js';
+import { IdentityBotFeature } from './interface/telegram/identity.bot.js';
+import { IdentityContextFeature } from './interface/telegram/identity.context.js';
+import { PhoneGate } from './interface/telegram/phone-gate.js';
+
+/** Identity bounded context (TZ 4.1): foydalanuvchi, telefon tasdiqlash, til, rollar. */
+@Module({
+  imports: [MongooseModule.forFeature([{ name: USER_MODEL, schema: UserSchema }])],
+  providers: [
+    { provide: UserRepository, useClass: MongoUserRepository },
+    EnsureUserUseCase,
+    ShareContactUseCase,
+    ChangeLanguageUseCase,
+    RenameUserUseCase,
+    SetBotBlockedUseCase,
+    PhoneGate,
+    IdentityContextFeature,
+    IdentityBotFeature,
+  ],
+  exports: [PhoneGate],
+})
+export class IdentityModule {}

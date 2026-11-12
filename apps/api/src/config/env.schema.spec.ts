@@ -25,4 +25,51 @@ describe('validateEnv', () => {
   it('rejects out-of-range port', () => {
     expect(() => validateEnv({ ...valid, PORT: '70000' })).toThrow(/PORT/);
   });
+
+  describe('Telegram', () => {
+    const token = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw1';
+
+    it('bot is off by default and needs no token', () => {
+      expect(validateEnv(valid).TELEGRAM_MODE).toBe('off');
+    });
+
+    it('polling requires a token', () => {
+      expect(() => validateEnv({ ...valid, TELEGRAM_MODE: 'polling' })).toThrow(
+        /TELEGRAM_BOT_TOKEN/,
+      );
+      expect(
+        validateEnv({ ...valid, TELEGRAM_MODE: 'polling', TELEGRAM_BOT_TOKEN: token }),
+      ).toMatchObject({
+        TELEGRAM_MODE: 'polling',
+      });
+    });
+
+    it('webhook requires secret and https PUBLIC_URL', () => {
+      const base = { ...valid, TELEGRAM_MODE: 'webhook', TELEGRAM_BOT_TOKEN: token };
+      expect(() => validateEnv(base)).toThrow(/TELEGRAM_WEBHOOK_SECRET[\s\S]*PUBLIC_URL/);
+      expect(() =>
+        validateEnv({
+          ...base,
+          TELEGRAM_WEBHOOK_SECRET: 's'.repeat(32),
+          PUBLIC_URL: 'http://x.uz',
+        }),
+      ).toThrow(/PUBLIC_URL/);
+      expect(
+        validateEnv({
+          ...base,
+          TELEGRAM_WEBHOOK_SECRET: 's'.repeat(32),
+          PUBLIC_URL: 'https://x.uz',
+        }),
+      ).toMatchObject({ TELEGRAM_MODE: 'webhook' });
+    });
+
+    it('rejects malformed token and short secret', () => {
+      expect(() => validateEnv({ ...valid, TELEGRAM_BOT_TOKEN: 'abc' })).toThrow(
+        /TELEGRAM_BOT_TOKEN/,
+      );
+      expect(() => validateEnv({ ...valid, TELEGRAM_WEBHOOK_SECRET: 'short' })).toThrow(
+        /TELEGRAM_WEBHOOK_SECRET/,
+      );
+    });
+  });
 });

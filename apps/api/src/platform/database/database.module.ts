@@ -37,8 +37,9 @@ export class ReplicaSetGuard implements OnApplicationBootstrap {
       inject: [ConfigService],
       useFactory: (config: ConfigService<Env, true>) => ({
         uri: config.get('MONGO_URI', { infer: true }),
-        // Produksiyada indekslar migratsiya orqali boshqariladi, avtomatik emas
-        autoIndex: config.get('NODE_ENV', { infer: true }) !== 'production',
+        // Indekslarni har bir repository ishga tushganda o'zi yaratadi (`createIndexes`, kutib turadi).
+        // Mongoose'ning fon rejimidagi autoIndex o'chirilgan: unique kafolat so'rovlardan OLDIN bo'lishi shart.
+        autoIndex: false,
         serverSelectionTimeoutMS: 5_000,
       }),
     }),

@@ -71,7 +71,8 @@ module.exports = {
       severity: 'error',
       comment:
         "Use case'lar portlar (interfeyslar) orqali ishlaydi; Mongoose/grammY/Redis to'g'ridan-to'g'ri emas.",
-      from: { path: `${MODULES}application/` },
+      // Testlar test double'larni (in-memory repository) ulay oladi; produksiya kodi — yo'q
+      from: { path: `${MODULES}application/`, pathNot: '\\.spec\\.ts$' },
       to: {
         path: [INFRA_LIBS, `${MODULES}(infrastructure|interface)/`, '^apps/[^/]+/src/platform/'],
       },
