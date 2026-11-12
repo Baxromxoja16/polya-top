@@ -23,6 +23,7 @@
     "@biomejs/biome": "2.6.6",
     "@types/node": "catalog:",
     "dependency-cruiser": "18.7.2",
+    "pnpm": "12.18.0",
     "turbo": "2.11.10",
     "typescript": "catalog:"
   }

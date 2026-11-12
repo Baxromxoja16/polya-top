@@ -6,6 +6,7 @@ packages:
 allowBuilds:
   "@swc/core": true
   cpu-features: false
+  pnpm: true
   protobufjs: false
   ssh2: false
 
