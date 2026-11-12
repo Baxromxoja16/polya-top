@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { Clock, type GeoPoint, type Money, PhoneNumber } from '@polya/shared-kernel';
+import { Clock, type GeoPoint, IdGenerator, type Money, PhoneNumber } from '@polya/shared-kernel';
 import { type OpeningHours, SchedulingFacade } from '../../scheduling/index.js';
-import type { Pitch, PitchFormat, PitchId, Surface } from '../domain/pitch.js';
+import { Pitch, type PitchFormat, type PitchId, type Surface } from '../domain/pitch.js';
 import { PitchRepository, VenueRepository } from '../domain/repositories.js';
 import type { Amenity, Venue, VenueId } from '../domain/venue.js';
 import {
@@ -46,6 +46,7 @@ export class VenueManagementService {
     private readonly pitches: PitchRepository,
     private readonly scheduling: SchedulingFacade,
     private readonly clock: Clock,
+    private readonly ids: IdGenerator,
   ) {}
 
   // --- Admin ko'rigi (TZ VC-1, AD-1) ---
@@ -144,6 +145,27 @@ export class VenueManagementService {
     }
     await this.pitches.save(pitch);
     await this.syncPitchDetails(venue);
+    return pitch;
+  }
+
+  /** TZ VC-2a: qo'shimcha maydon. Ish vaqti va narx birinchi maydondan olinadi (keyin o'zgartiriladi). */
+  async addPitch(actor: Actor, venueId: VenueId, name: string): Promise<Pitch> {
+    const venue = await this.load(actor, venueId);
+    const existing = await this.pitches.listByVenue(venue.id);
+    const pitch = Pitch.create({
+      id: this.ids.next() as PitchId,
+      venueId: venue.id,
+      name,
+      now: this.clock.now(),
+    });
+    const template = existing[0]
+      ? (await this.scheduling.getSetups([existing[0].id])).get(existing[0].id)
+      : undefined;
+    if (template?.uniformHours)
+      await this.scheduling.setUniformHours(pitch.id, template.uniformHours);
+    if (template?.basePricePerHour)
+      await this.scheduling.setBasePrice(pitch.id, template.basePricePerHour);
+    await this.pitches.save(pitch);
     return pitch;
   }
 

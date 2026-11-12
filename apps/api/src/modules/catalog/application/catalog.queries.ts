@@ -123,6 +123,10 @@ export class CatalogQueries {
     };
   }
 
+  async venueIdOfPitch(pitchId: string): Promise<string | null> {
+    return (await this.pitches.findById(pitchId as Pitch['id']))?.venueId ?? null;
+  }
+
   async ownerVenues(ownerId: string): Promise<Venue[]> {
     return this.venues.listByOwner(ownerId);
   }

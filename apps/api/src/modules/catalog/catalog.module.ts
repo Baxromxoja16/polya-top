@@ -18,6 +18,7 @@ import {
   MongoVenueRepository,
 } from './infrastructure/mongo-catalog.repositories.js';
 import { OwnerOnboardingBotFeature } from './interface/telegram/owner-onboarding.bot.js';
+import { OwnerVenueBotFeature } from './interface/telegram/owner-venue.bot.js';
 
 /** Venue Catalog (TZ 4.2): stadionlar, maydonlar, qidiruv. */
 @Module({
@@ -37,6 +38,7 @@ import { OwnerOnboardingBotFeature } from './interface/telegram/owner-onboarding
     VenueManagementService,
     CatalogQueries,
     OwnerOnboardingBotFeature,
+    OwnerVenueBotFeature,
   ],
   exports: [CatalogQueries],
 })
