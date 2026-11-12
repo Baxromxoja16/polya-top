@@ -45,6 +45,8 @@ export interface VenueProps {
   amenities: Amenity[];
   /** Telegram file_id'lar */
   photos: string[];
+  /** Denormalizatsiya: biror maydonda format+qoplama kiritilgan (VC-2c, Catalog app qatlami sinxronlaydi) */
+  pitchDetailsComplete: boolean;
   status: VenueStatus;
   rejectReason: string | null;
   approvedAt: Date | null;
@@ -98,6 +100,7 @@ export class Venue extends AggregateRoot<VenueId> {
         phones: [params.ownerPhone],
         amenities: [],
         photos: [],
+        pitchDetailsComplete: false,
         status: 'PENDING_REVIEW',
         rejectReason: null,
         approvedAt: null,
@@ -181,7 +184,17 @@ export class Venue extends AggregateRoot<VenueId> {
    * TZ VC-2c: majburiy 4 maydon (nom, orientir, ish vaqti, narx) — 30%;
    * rasm +20, lokatsiya +20, qulayliklar +10, maydon tafsilotlari +10, tavsif +10.
    */
-  completeness(hasPitchDetails: boolean): number {
+  get pitchDetailsComplete(): boolean {
+    return this.#p.pitchDetailsComplete;
+  }
+
+  syncPitchDetails(complete: boolean, now: Date): void {
+    if (this.#p.pitchDetailsComplete === complete) return;
+    this.#p.pitchDetailsComplete = complete;
+    this.touch(now);
+  }
+
+  completeness(hasPitchDetails = this.#p.pitchDetailsComplete): number {
     return (
       30 +
       (this.#p.photos.length > 0 ? 20 : 0) +
