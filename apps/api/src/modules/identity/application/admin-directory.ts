@@ -4,6 +4,8 @@
  */
 export abstract class AdminDirectory {
   abstract isAdmin(telegramId: number): boolean;
+  /** Admin xabarnomalari (yangi ariza, yangi stadion) shu ro'yxatga yuboriladi. */
+  abstract telegramIds(): readonly number[];
 }
 
 export class StaticAdminDirectory extends AdminDirectory {
@@ -16,5 +18,9 @@ export class StaticAdminDirectory extends AdminDirectory {
 
   isAdmin(telegramId: number): boolean {
     return this.#ids.has(telegramId);
+  }
+
+  telegramIds(): readonly number[] {
+    return [...this.#ids];
   }
 }
