@@ -1,6 +1,7 @@
 import type { Provider } from '@nestjs/common';
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { Test } from '@nestjs/testing';
+import { Clock } from '@polya/shared-kernel';
 import { MongoDBContainer, type StartedMongoDBContainer } from '@testcontainers/mongodb';
 import { RedisContainer, type StartedRedisContainer } from '@testcontainers/redis';
 import type { Bot } from 'grammy';
@@ -33,6 +34,8 @@ export async function startInfra(): Promise<Infra> {
 export interface TestAppOptions {
   /** Haqiqiy bot o'rniga — Telegram API'ga chiqmaydigan test bot. */
   bot?: Bot<BotContext>;
+  /** Vaqtni boshqarish (muddat, yakunlash testlari) */
+  clock?: Clock;
   /** Faqat testlar uchun qo'shimcha provider'lar (masalan, test bot feature). */
   providers?: Provider[];
   // biome-ignore lint/suspicious/noExplicitAny: Nest module class
@@ -61,6 +64,7 @@ export async function createTestApp(
     providers: options.providers ?? [],
   });
   if (options.bot) builder = builder.overrideProvider(BOT).useValue(options.bot);
+  if (options.clock) builder = builder.overrideProvider(Clock).useValue(options.clock);
 
   const moduleRef = await builder.compile();
   const app = moduleRef.createNestApplication<NestFastifyApplication>(createFastifyAdapter(), {

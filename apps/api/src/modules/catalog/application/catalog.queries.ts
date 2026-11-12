@@ -5,6 +5,7 @@ import { type PitchSetupView, SchedulingFacade } from '../../scheduling/index.js
 import type { Pitch } from '../domain/pitch.js';
 import { PitchRepository, VenueRepository } from '../domain/repositories.js';
 import type { Venue, VenueId } from '../domain/venue.js';
+import type { PitchContext } from './pitch-context.js';
 
 export interface PitchCardView {
   id: string;
@@ -125,6 +126,39 @@ export class CatalogQueries {
 
   async venueIdOfPitch(pitchId: string): Promise<string | null> {
     return (await this.pitches.findById(pitchId as Pitch['id']))?.venueId ?? null;
+  }
+
+  /** Booking uchun: maydon + stadion + vaqt zonasi */
+  async pitchContext(pitchId: string): Promise<PitchContext | null> {
+    const pitch = await this.pitches.findById(pitchId as Pitch['id']);
+    const venue = pitch ? await this.venues.findById(pitch.venueId as VenueId) : null;
+    if (!pitch || !venue) return null;
+    const city = await this.geography.getCity(venue.cityId as CityId);
+    return {
+      pitchId: pitch.id,
+      pitchName: pitch.name,
+      isBookable: pitch.isBookable,
+      venue: {
+        id: venue.id,
+        name: venue.name,
+        ownerId: venue.ownerId,
+        isPublic: venue.isPublic,
+        phones: venue.phones,
+        landmarkText: venue.landmarkText,
+        location: venue.location,
+        cityId: venue.cityId,
+      },
+      timeZone: city?.timezone ?? 'Asia/Tashkent',
+    };
+  }
+
+  async pitchContexts(pitchIds: readonly string[]): Promise<Map<string, PitchContext>> {
+    const result = new Map<string, PitchContext>();
+    for (const id of new Set(pitchIds)) {
+      const ctx = await this.pitchContext(id);
+      if (ctx) result.set(id, ctx);
+    }
+    return result;
   }
 
   async ownerVenues(ownerId: string): Promise<Venue[]> {
