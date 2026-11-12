@@ -1,0 +1,29 @@
+{
+  "name": "polya-top",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.18.0",
+  "engines": {
+    "node": ">=26.0.0"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --filter=@polya/api",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:e2e": "turbo run test:e2e",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "arch": "depcruise apps packages --config .dependency-cruiser.cjs",
+    "verify": "pnpm lint && pnpm typecheck && pnpm arch && pnpm test && pnpm test:e2e && pnpm build",
+    "infra:up": "docker compose up -d mongo redis",
+    "infra:down": "docker compose down"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.6",
+    "@types/node": "catalog:",
+    "dependency-cruiser": "18.7.2",
+    "turbo": "2.11.10",
+    "typescript": "catalog:"
+  }
+}
