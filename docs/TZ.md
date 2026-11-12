@@ -788,6 +788,7 @@ Har bosqich oxirida: kod + testlar → siz tekshirasiz → tasdiqlaysiz → keyi
 | 0 — Fundament | ✅ | ADR-0001…0004 |
 | 1 — Identity + bot | ✅ | ADR-0005 |
 | 2 — Catalog + Search | ✅ | Geography, Owner arizasi, onboarding, admin ko'rigi, boshqaruv menyusi, qidiruv, kartochka, sevimlilar |
+| 3 — Schedule & Pricing | ✅ | Hafta kunlari, istisno kunlar, narx qoidalari, bo'sh slotlar (Availability), "Bo'sh maydon topish", "Hozir bo'sh", kartochkada bo'sh vaqtlar to'ri |
 
 ### TZ'dan chetlanishlar (asoslangan)
 | Joy | TZ | Amalda | Sabab |
@@ -795,4 +796,6 @@ Har bosqich oxirida: kod + testlar → siz tekshirasiz → tasdiqlaysiz → keyi
 | EC-O1 | Qoralama DB'da, 30 kun | Qoralama Redis sessiyasida, 7 kun (sessiya TTL) | Yarim to'ldirilgan stadion bazada "axlat" bo'lib qolmaydi; 4 ta maydon uchun yetarli |
 | EC-O6 | Topilmagan so'rovlar Admin uchun yig'iladi | Strukturali log (`search.miss`) | Admin paneli (7-bosqich) shu log'dan hisobot oladi |
 | 4.2 | Admin boshqaruvi bot orqali | Bot buyruqlari (`/admin`, `/cities`, `/addcity`, `/pending` ...) | Adminlar ichki xodim; to'liq web panel — v2 |
-| VC-5b, VC-5c, VC-5d | "Hozir bo'sh", "Yana bandlash", "Bo'shasa xabar ber" | 3–6a-bosqichlarda | Bo'sh slotlar (3) va bandlovlar (4) talab qilinadi |
+| VC-5c, VC-5d | "Yana bandlash", "Bo'shasa xabar ber" | 4–6a-bosqichlarda | Bandlovlar (4) talab qilinadi |
+| SP-6, SP-7 | Stadion darajasida sozlanadi | Hozircha platforma standarti (14 kun, 30 daqiqa, maks. 4 soat) — `BookingPolicy` | Owner sozlamalari 4-bosqichda bandlov sozlamalari bilan birga |
+| 5.2 | Sana → vaqt → lokatsiya → natija | Sana → vaqt → natija (shahar bo'yicha, arzonidan) | Lokatsiya so'rash qadamni uzaytiradi; masofa bo'yicha qidiruv "📍 Yaqin atrofdagi"da bor |
