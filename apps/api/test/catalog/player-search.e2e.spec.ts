@@ -145,4 +145,25 @@ describe('Player search and venue card (e2e): TZ VC-4…VC-7, EC-O6, EC-O7', () 
     const out = await player.send('/start v_hidden-pending');
     expect(texts(out)[0]).toBe('Bu stadion hozir mavjud emas.');
   });
+
+  it('VC-8: add to favorites from the card, list them, remove again', async () => {
+    const list = await player.send('Olmaliq Arena');
+    const card = await player.press(buttons(list)[0] as string);
+    const fav = buttons(card).find((b) => b?.startsWith('cat:fav:')) as string;
+
+    const added = await player.press(fav);
+    expect(added[0]).toMatchObject({
+      method: 'answerCallbackQuery',
+      payload: { text: "⭐ Sevimlilarga qo'shildi" },
+    });
+    await player.press(fav.replace('cat:fav:', 'cat:fav:')); // ikkinchi bosish — olib tashlaydi
+    await player.press(fav); // yana qo'shadi
+
+    const favorites = await player.send('⭐ Sevimlilar');
+    expect(texts(favorites)[0]).toContain('⭐ Sevimli stadionlar');
+    expect(texts(favorites)[0]).toContain('1. Olmaliq Arena');
+
+    await player.press(fav);
+    expect(texts(await player.send('⭐ Sevimlilar'))[0]).toContain("ro'yxati bo'sh");
+  });
 });

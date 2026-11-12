@@ -4,8 +4,10 @@ import { GeographyModule } from '../geography/index.js';
 import { IdentityModule } from '../identity/index.js';
 import { SchedulingModule } from '../scheduling/index.js';
 import { CatalogQueries } from './application/catalog.queries.js';
+import { FavoritesService } from './application/favorites.service.js';
 import { RegisterVenueUseCase } from './application/register-venue.use-case.js';
 import { VenueManagementService } from './application/venue-management.service.js';
+import { FavoritesRepository } from './domain/favorites.js';
 import { PitchRepository, VenueRepository } from './domain/repositories.js';
 import {
   PITCH_MODEL,
@@ -17,6 +19,11 @@ import {
   MongoPitchRepository,
   MongoVenueRepository,
 } from './infrastructure/mongo-catalog.repositories.js';
+import {
+  FAVORITE_MODEL,
+  FavoriteSchema,
+  MongoFavoritesRepository,
+} from './infrastructure/mongo-favorites.repository.js';
 import { OwnerOnboardingBotFeature } from './interface/telegram/owner-onboarding.bot.js';
 import { OwnerVenueBotFeature } from './interface/telegram/owner-venue.bot.js';
 import {
@@ -30,6 +37,7 @@ import {
     MongooseModule.forFeature([
       { name: VENUE_MODEL, schema: VenueSchema },
       { name: PITCH_MODEL, schema: PitchSchema },
+      { name: FAVORITE_MODEL, schema: FavoriteSchema },
     ]),
     GeographyModule,
     SchedulingModule,
@@ -38,6 +46,8 @@ import {
   providers: [
     { provide: VenueRepository, useClass: MongoVenueRepository },
     { provide: PitchRepository, useClass: MongoPitchRepository },
+    { provide: FavoritesRepository, useClass: MongoFavoritesRepository },
+    FavoritesService,
     RegisterVenueUseCase,
     VenueManagementService,
     CatalogQueries,

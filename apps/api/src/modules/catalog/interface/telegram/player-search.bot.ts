@@ -12,7 +12,12 @@ import { coreMessages } from '../../../../platform/telegram/core.messages.js';
 import { hasRole } from '../../../../platform/telegram/guards.js';
 import { isMainMenuLabel, menuLabels } from '../../../../platform/telegram/main-menu.js';
 import { type CityId, GeographyQueries } from '../../../geography/index.js';
-import { CatalogQueries, type SearchInput } from '../../application/catalog.queries.js';
+import {
+  CatalogQueries,
+  type SearchInput,
+  type VenueListItem,
+} from '../../application/catalog.queries.js';
+import { FavoritesService } from '../../application/favorites.service.js';
 import { searchMessages } from './player-search.messages.js';
 import { listLine, venueCardText } from './venue-card.view.js';
 
@@ -35,6 +40,7 @@ export class PlayerSearchBotFeature implements BotFeature {
   constructor(
     private readonly catalog: CatalogQueries,
     private readonly geography: GeographyQueries,
+    private readonly favorites: FavoritesService,
   ) {}
 
   register(bot: Composer<BotContext>): void {
@@ -99,6 +105,25 @@ export class PlayerSearchBotFeature implements BotFeature {
       );
     });
 
+    // TZ VC-8: sevimlilar
+    bot.callbackQuery(/^cat:fav:([0-9a-f]{24})$/, async (ctx) => {
+      const userId = ctx.currentUser?.id;
+      if (!userId) return;
+      const venueId = ctx.match[1] as string;
+      const m = searchMessages[ctx.lang];
+      const isFavorite = await this.favorites.toggle(userId, venueId);
+      await ctx.answerCallbackQuery({ text: isFavorite ? m.favoriteAdded : m.favoriteRemoved });
+      await ctx
+        .editMessageReplyMarkup({ reply_markup: this.cardKeyboard(ctx, venueId, isFavorite) })
+        .catch(() => undefined);
+    });
+    bot.hears(menuLabels('favorites'), async (ctx) => {
+      const m = searchMessages[ctx.lang];
+      const items = await this.favorites.list(ctx.currentUser?.id ?? '', this.catalog);
+      if (items.length === 0) return void (await ctx.reply(m.favoritesEmpty));
+      await this.replyList(ctx, m.favorites, items, 0, false);
+    });
+
     // Erkin matn — qidiruv so'rovi (TZ VC-4: "21 maktab", "bozor yonida", stadion nomi)
     bot.on('message:text', async (ctx, next) => {
       const text = ctx.message.text;
@@ -117,7 +142,9 @@ export class PlayerSearchBotFeature implements BotFeature {
       await ctx.reply(m.notAvailable);
       return false;
     }
-    const kb = new InlineKeyboard().text(m.btnLocation, `cat:loc:${card.venue.id}`);
+    const userId = ctx.currentUser?.id;
+    const favorite = userId ? await this.favorites.isFavorite(userId, card.venue.id) : false;
+    const kb = this.cardKeyboard(ctx, card.venue.id, favorite);
     const text = venueCardText(card, ctx.lang);
     const photo = card.venue.photos[0];
     // Telegram caption chegarasi 1024 belgi
@@ -185,14 +212,31 @@ export class PlayerSearchBotFeature implements BotFeature {
                 )
               : m.titleAll;
 
-    const lines = out.hits.map((h, i) => listLine(h, offset + i + 1, ctx.lang));
+    await this.replyList(ctx, m.results(title), out.hits, offset, out.hits.length === PAGE);
+  }
+
+  private async replyList(
+    ctx: BotContext,
+    title: string,
+    items: VenueListItem[],
+    offset: number,
+    more: boolean,
+  ): Promise<void> {
+    const lines = items.map((h, i) => listLine(h, offset + i + 1, ctx.lang));
     const kb = new InlineKeyboard();
-    out.hits.forEach((h, i) => {
+    items.forEach((h, i) => {
       kb.text(`${offset + i + 1}. ${h.venue.name}`, `cat:c:${h.venue.id}`);
       if (i % 2 === 1) kb.row();
     });
-    if (out.hits.length === PAGE) kb.row().text(m.btnMore, `cat:more:${offset + PAGE}`);
-    await ctx.reply(`${m.results(title)}\n\n${lines.join('\n\n')}`, { reply_markup: kb });
+    if (more) kb.row().text(searchMessages[ctx.lang].btnMore, `cat:more:${offset + PAGE}`);
+    await ctx.reply(`${title}\n\n${lines.join('\n\n')}`, { reply_markup: kb });
+  }
+
+  private cardKeyboard(ctx: BotContext, venueId: string, favorite: boolean): InlineKeyboard {
+    const m = searchMessages[ctx.lang];
+    return new InlineKeyboard()
+      .text(m.btnLocation, `cat:loc:${venueId}`)
+      .text(favorite ? m.btnUnfavorite : m.btnFavorite, `cat:fav:${venueId}`);
   }
 
   /** TZ CT-5: qidiruv foydalanuvchi shahri doirasida. */
