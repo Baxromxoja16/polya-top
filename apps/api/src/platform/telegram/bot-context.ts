@@ -28,6 +28,11 @@ export interface SessionData {
   awaiting?: PendingStep;
   /** Telefon tasdiqlangandan keyin davom ettiriladigan amal (TZ 5.2, 6-qadam). */
   afterPhone?: PendingStep;
+  /**
+   * Ko'p qadamli oqimlarning qoralamalari (masalan, stadion qo'shish). `awaiting` tozalansa ham
+   * saqlanadi — foydalanuvchi menyuga chiqib ketib, keyin davom ettira oladi (TZ EC-O1).
+   */
+  drafts?: Record<string, Record<string, unknown>>;
 }
 
 interface BotFlavor {

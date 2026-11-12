@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { GeographyModule } from '../geography/index.js';
+import { IdentityModule } from '../identity/index.js';
 import { SchedulingModule } from '../scheduling/index.js';
 import { CatalogQueries } from './application/catalog.queries.js';
 import { RegisterVenueUseCase } from './application/register-venue.use-case.js';
@@ -16,6 +17,7 @@ import {
   MongoPitchRepository,
   MongoVenueRepository,
 } from './infrastructure/mongo-catalog.repositories.js';
+import { OwnerOnboardingBotFeature } from './interface/telegram/owner-onboarding.bot.js';
 
 /** Venue Catalog (TZ 4.2): stadionlar, maydonlar, qidiruv. */
 @Module({
@@ -26,6 +28,7 @@ import {
     ]),
     GeographyModule,
     SchedulingModule,
+    IdentityModule,
   ],
   providers: [
     { provide: VenueRepository, useClass: MongoVenueRepository },
@@ -33,6 +36,7 @@ import {
     RegisterVenueUseCase,
     VenueManagementService,
     CatalogQueries,
+    OwnerOnboardingBotFeature,
   ],
   exports: [CatalogQueries],
 })
