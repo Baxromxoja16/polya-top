@@ -11,8 +11,10 @@ import { sendMainMenu } from '../../../../platform/telegram/core.features.js';
 import { coreMessages } from '../../../../platform/telegram/core.messages.js';
 import { isMainMenuLabel, menuLabels } from '../../../../platform/telegram/main-menu.js';
 import { showMessage } from '../../../../platform/telegram/ui.js';
+import { CityCatalog } from '../../application/city-catalog.js';
 import { ShareContactUseCase } from '../../application/share-contact.use-case.js';
 import {
+  ChangeCityUseCase,
   ChangeLanguageUseCase,
   RenameUserUseCase,
   SetBotBlockedUseCase,
@@ -30,6 +32,8 @@ const CB = {
   setLanguage: /^id:lang:(uz|ru)(:new)?$/,
   phone: 'id:phone',
   name: 'id:name',
+  pickCity: 'id:city',
+  setCity: /^id:city:([0-9a-f]{24})(:new)?$/,
 } as const;
 
 const LOOKS_LIKE_PHONE = /^[+\d][\d\s()-]{6,}$/;
@@ -43,6 +47,8 @@ export class IdentityBotFeature implements BotFeature {
     private readonly renameUser: RenameUserUseCase,
     private readonly setBotBlocked: SetBotBlockedUseCase,
     private readonly phoneGate: PhoneGate,
+    private readonly changeCity: ChangeCityUseCase,
+    private readonly cities: CityCatalog,
   ) {}
 
   register(bot: Composer<BotContext>): void {
@@ -72,7 +78,35 @@ export class IdentityBotFeature implements BotFeature {
       await ctx.answerCallbackQuery();
       const m = identityMessages[ctx.lang];
       await showMessage(ctx, m.languageSaved);
+      // Onboarding: shahar tanlanmagan va bir nechta bo'lsa — avval shahar (TZ CT-4)
+      if (onboarding && !ctx.currentUser?.cityId && (await this.askCity(ctx, true))) return;
       // Yangi tildagi menyu klaviaturasi bilan
+      await sendMainMenu(
+        ctx,
+        onboarding ? m.welcomeNew(this.nameOf(ctx)) : coreMessages[ctx.lang].mainMenu,
+      );
+    });
+
+    bot.callbackQuery(CB.pickCity, async (ctx) => {
+      await ctx.answerCallbackQuery();
+      if (!(await this.askCity(ctx, false))) await ctx.reply(identityMessages[ctx.lang].noCities);
+    });
+
+    bot.callbackQuery(CB.setCity, async (ctx) => {
+      const onboarding = ctx.match[2] !== undefined;
+      const result = await this.changeCity.execute({
+        telegramId: ctx.from.id,
+        cityId: ctx.match[1] as string,
+      });
+      const m = identityMessages[ctx.lang];
+      if (!result.ok) {
+        await ctx.answerCallbackQuery({ text: m.cityUnavailable });
+        await this.askCity(ctx, onboarding);
+        return;
+      }
+      this.refreshContext(ctx, result.value);
+      await ctx.answerCallbackQuery();
+      await showMessage(ctx, m.citySaved(await this.cityName(ctx)));
       await sendMainMenu(
         ctx,
         onboarding ? m.welcomeNew(this.nameOf(ctx)) : coreMessages[ctx.lang].mainMenu,
@@ -160,6 +194,23 @@ export class IdentityBotFeature implements BotFeature {
     await sendMainMenu(ctx, m.welcomeBack(this.nameOf(ctx)));
   }
 
+  /** @returns tanlash kerakmi edi (faol shahar 2+ ta). Bitta yoki yo'q bo'lsa — so'ralmaydi. */
+  private async askCity(ctx: BotContext, onboarding: boolean): Promise<boolean> {
+    const cities = await this.cities.activeCities();
+    if (cities.length === 0 || (onboarding && cities.length === 1)) return false;
+    const kb = new InlineKeyboard();
+    for (const c of cities)
+      kb.text(c.name[ctx.lang], `id:city:${c.id}${onboarding ? ':new' : ''}`).row();
+    await showMessage(ctx, identityMessages[ctx.lang].chooseCity, kb);
+    return true;
+  }
+
+  private async cityName(ctx: BotContext): Promise<string | null> {
+    const id = ctx.currentUser?.cityId;
+    if (!id) return null;
+    return (await this.cities.activeCities()).find((c) => c.id === id)?.name[ctx.lang] ?? null;
+  }
+
   private async showSettings(ctx: BotContext): Promise<void> {
     const m = identityMessages[ctx.lang];
     const phone = ctx.currentUser?.phone;
@@ -168,6 +219,7 @@ export class IdentityBotFeature implements BotFeature {
         this.nameOf(ctx),
         phone ? PhoneNumber.parse(phone).format() : m.notSet,
         m.languageName,
+        (await this.cityName(ctx)) ?? m.notSet,
       ),
       {
         reply_markup: new InlineKeyboard()
@@ -175,7 +227,9 @@ export class IdentityBotFeature implements BotFeature {
           .row()
           .text(m.btnPhone, CB.phone)
           .row()
-          .text(m.btnName, CB.name),
+          .text(m.btnName, CB.name)
+          .row()
+          .text(m.btnCity, CB.pickCity),
       },
     );
   }

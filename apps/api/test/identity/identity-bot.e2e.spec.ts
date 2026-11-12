@@ -177,7 +177,7 @@ describe('Identity bot (e2e): TZ ID-1…ID-6', () => {
     it('shows settings with phone and language', async () => {
       const out = await sim(2002).send('⚙️ Sozlamalar');
       expect(texts(out)[0]).toContain('📱 Telefon: +998 90 123 45 67');
-      expect(buttons(out)).toEqual(['id:lang', 'id:phone', 'id:name']);
+      expect(buttons(out)).toEqual(['id:lang', 'id:phone', 'id:name', 'id:city']);
     });
 
     it('rejects an invalid name and accepts a valid one', async () => {

@@ -12,8 +12,13 @@ export const identityMessages = defineMessages(
     welcomeBack: (name: string) => `Xush kelibsiz, ${name}! Quyidagi menyudan tanlang 👇`,
     fallbackName: (tail: string) => `Foydalanuvchi #${tail}`,
 
-    settings: (name: string, phone: string, language: string) =>
-      `⚙️ Sozlamalar\n\n👤 Ism: ${name}\n📱 Telefon: ${phone}\n🌐 Til: ${language}`,
+    settings: (name: string, phone: string, language: string, city: string) =>
+      `⚙️ Sozlamalar\n\n👤 Ism: ${name}\n📱 Telefon: ${phone}\n🌐 Til: ${language}\n🏙 Shahar: ${city}`,
+    btnCity: "🏙 Shaharni o'zgartirish",
+    chooseCity: '🏙 Shahringizni tanlang:',
+    citySaved: (city: string | null) => `✅ Shahar: ${city ?? ''}`,
+    cityUnavailable: 'Bu shahar hozir mavjud emas',
+    noCities: "Hozircha shaharlar qo'shilmagan.",
     notSet: 'kiritilmagan',
     btnLanguage: "🌐 Tilni o'zgartirish",
     btnPhone: '📱 Telefon raqam',
@@ -45,8 +50,13 @@ export const identityMessages = defineMessages(
     welcomeBack: (name) => `С возвращением, ${name}! Выберите в меню 👇`,
     fallbackName: (tail) => `Пользователь #${tail}`,
 
-    settings: (name, phone, language) =>
-      `⚙️ Настройки\n\n👤 Имя: ${name}\n📱 Телефон: ${phone}\n🌐 Язык: ${language}`,
+    settings: (name, phone, language, city) =>
+      `⚙️ Настройки\n\n👤 Имя: ${name}\n📱 Телефон: ${phone}\n🌐 Язык: ${language}\n🏙 Город: ${city}`,
+    btnCity: '🏙 Сменить город',
+    chooseCity: '🏙 Выберите ваш город:',
+    citySaved: (city) => `✅ Город: ${city ?? ''}`,
+    cityUnavailable: 'Этот город сейчас недоступен',
+    noCities: 'Города пока не добавлены.',
     notSet: 'не указан',
     btnLanguage: '🌐 Сменить язык',
     btnPhone: '📱 Номер телефона',
