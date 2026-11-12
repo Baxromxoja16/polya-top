@@ -6,6 +6,7 @@ import { GeographyModule } from '../geography/index.js';
 import { AdminDirectory, StaticAdminDirectory } from './application/admin-directory.js';
 import { CityCatalog } from './application/city-catalog.js';
 import { EnsureUserUseCase } from './application/ensure-user.use-case.js';
+import { IdentityQueries } from './application/identity.queries.js';
 import {
   ReviewOwnerApplicationUseCase,
   SubmitOwnerApplicationUseCase,
@@ -54,6 +55,7 @@ import { PhoneGate } from './interface/telegram/phone-gate.js';
     SubmitOwnerApplicationUseCase,
     ReviewOwnerApplicationUseCase,
     EnsureUserUseCase,
+    IdentityQueries,
     ChangeCityUseCase,
     ShareContactUseCase,
     ChangeLanguageUseCase,
@@ -64,6 +66,6 @@ import { PhoneGate } from './interface/telegram/phone-gate.js';
     IdentityBotFeature,
     OwnerApplicationBotFeature,
   ],
-  exports: [PhoneGate],
+  exports: [PhoneGate, IdentityQueries],
 })
 export class IdentityModule {}
