@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { AvailabilityService } from './application/availability.service.js';
+import { OccupancyRegistry } from './application/occupancy.js';
 import { SchedulingFacade } from './application/scheduling.facade.js';
 import { PitchScheduleRepository, PricingPlanRepository } from './domain/pitch-schedule.js';
 import {
@@ -23,7 +25,9 @@ import {
     { provide: PitchScheduleRepository, useClass: MongoPitchScheduleRepository },
     { provide: PricingPlanRepository, useClass: MongoPricingPlanRepository },
     SchedulingFacade,
+    AvailabilityService,
+    OccupancyRegistry,
   ],
-  exports: [SchedulingFacade],
+  exports: [SchedulingFacade, AvailabilityService, OccupancyRegistry],
 })
 export class SchedulingModule {}
