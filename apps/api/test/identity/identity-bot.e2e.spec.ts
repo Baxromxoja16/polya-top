@@ -261,10 +261,10 @@ describe('Identity bot (e2e): TZ ID-1…ID-6', () => {
       expect(texts(out)).toEqual(['Asosiy menyu 👇']);
     });
 
-    it('not yet implemented menu items say "coming soon"', async () => {
-      expect(texts(await sim(1001).send('📅 Mening bandlovlarim'))).toEqual([
-        "🚧 Bu bo'lim tez orada ishga tushadi.",
-      ]);
+    it('every main menu item is implemented (bookings shows an empty list)', async () => {
+      expect(texts(await sim(1001).send('📅 Mening bandlovlarim'))[0]).toContain(
+        "Sizda faol bandlov yo'q",
+      );
     });
 
     it('free text is treated as a search query (no cities yet → explains)', async () => {

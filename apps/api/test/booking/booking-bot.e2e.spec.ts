@@ -3,6 +3,7 @@ import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { addDays, localizedText, Money, zonedParts, zonedToUtc } from '@polya/shared-kernel';
 import type { Connection } from 'mongoose';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { BookingSweeper } from '../../src/modules/booking/index.js';
 import { RegisterVenueUseCase } from '../../src/modules/catalog/application/register-venue.use-case.js';
 import { VenueManagementService } from '../../src/modules/catalog/application/venue-management.service.js';
 import type { VenueId } from '../../src/modules/catalog/domain/venue.js';
@@ -190,5 +191,54 @@ describe('Booking via bot (e2e): TZ BK-1…BK-4, Q1 (queue + contact exchange)',
     expect(texts(asked)[0]).toContain('telefon raqamingiz kerak');
     const out = await newbie.shareContact('998901110010');
     expect(texts(out).some((t) => t.includes("✅ So'rov yuborildi"))).toBe(true);
+  });
+
+  it('BK-12: "Mening bandlovlarim" lists upcoming bookings with status', async () => {
+    const out = await vali.send('📅 Мои брони');
+    expect(texts(out)[0]).toContain('📅 Предстоящие брони');
+    expect(texts(out)[0]).toContain('🟢 Olmaliq Arena');
+  });
+
+  it('BK-5: the player cancels a confirmed booking → owner is told, slot is free again', async () => {
+    const list = await vali.send('📅 Мои брони');
+    const open = buttons(list).find((b) => b?.startsWith('bk:v:')) as string;
+    const details = await vali.press(open);
+    const cancel = buttons(details).find((b) => b?.startsWith('bk:pc:')) as string;
+    const confirm = await vali.press(cancel);
+    const yes = buttons(confirm).find((b) => b?.startsWith('bk:pcy:')) as string;
+    const out = await vali.press(yes);
+    expect(to(OWNER, out)[0]?.payload.text).toContain('bandlovni bekor qildi');
+    const grid = await ali.press(`cat:avd:${pitchId}:${day}`);
+    const markup =
+      grid.find((c) => c.payload.reply_markup)?.payload.reply_markup?.inline_keyboard?.flat() ?? [];
+    expect(markup.some((b: { text: string }) => b.text === '🟢 20:00')).toBe(true);
+  });
+
+  it('VC-5c: "book again" offers the same time next week', async () => {
+    const history = await vali.press('bk:hist');
+    const open = buttons(history).find((b) => b?.startsWith('bk:v:')) as string;
+    const details = await vali.press(open);
+    const again = buttons(details).find((b) => b?.startsWith('bk:again:')) as string;
+    const out = await vali.press(again);
+    expect(buttons(out)[0]).toBe(`bk:d:${pitchId}:${sec(20) + 7 * 86_400}:1`);
+  });
+
+  it('BK-3f: the sweeper expires an unanswered request and tells the player', async () => {
+    await ali.press(`bk:ok:${pitchId}:${sec(10)}:1`);
+    const pending = await db
+      .collection('bookings')
+      .findOne({ status: 'PENDING', playerId: { $ne: null } }, { sort: { createdAt: -1 } });
+    await db
+      .collection('bookings')
+      .updateOne({ _id: pending?._id }, { $set: { expiresAt: new Date(Date.now() - 1000) } });
+    const before = calls.length;
+    const result = await app.get(BookingSweeper).run();
+    expect(result.expired).toBeGreaterThanOrEqual(1);
+    expect((await db.collection('bookings').findOne({ _id: pending?._id }))?.status).toBe(
+      'EXPIRED',
+    );
+    expect(
+      to(ALI, calls.slice(before)).some((c) => String(c.payload.text).includes('javob bermadi')),
+    ).toBe(true);
   });
 });

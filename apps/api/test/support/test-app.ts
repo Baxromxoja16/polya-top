@@ -51,7 +51,12 @@ export async function createTestApp(
   env: Record<string, string>,
   options: TestAppOptions = {},
 ): Promise<NestFastifyApplication> {
-  Object.assign(process.env, { NODE_ENV: 'test', LOG_LEVEL: 'silent', ...env });
+  Object.assign(process.env, {
+    NODE_ENV: 'test',
+    LOG_LEVEL: 'silent',
+    BOOKING_SWEEP_SECONDS: '0',
+    ...env,
+  });
 
   const { AppModule } = await import('../../src/app.module.js');
   const { configureApp, createFastifyAdapter } = await import(

@@ -15,7 +15,9 @@ import {
   SlotLockSchema,
 } from './infrastructure/booking.schemas.js';
 import { MongoBookingStore } from './infrastructure/mongo-booking.store.js';
+import { BookingSweeper } from './interface/booking-sweeper.js';
 import { BookingFlowBotFeature } from './interface/telegram/booking-flow.bot.js';
+import { MyBookingsBotFeature } from './interface/telegram/my-bookings.bot.js';
 
 /** Booking (TZ 4.4) — core domain. */
 @Module({
@@ -34,8 +36,10 @@ import { BookingFlowBotFeature } from './interface/telegram/booking-flow.bot.js'
     BookingService,
     BookingQueries,
     BookingFlowBotFeature,
+    MyBookingsBotFeature,
+    BookingSweeper,
   ],
-  exports: [BookingService, BookingQueries],
+  exports: [BookingService, BookingQueries, BookingSweeper],
 })
 export class BookingModule implements OnModuleInit {
   constructor(
