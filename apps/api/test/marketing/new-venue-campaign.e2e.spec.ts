@@ -106,14 +106,11 @@ describe('Marketing: "new pitch opened" campaigns (e2e): TZ 4.6.1, MK-1…MK-7, 
       "Olmaliq Arena\n   📍 Olmaliq Arena orientiri, maktab yonida · 💰 150 000 so'm dan",
     );
     // MK-4: har bir marketing xabarida o'chirish tugmasi
-    const kb = (msg?.payload.reply_markup as { inline_keyboard: { callback_data: string }[][] })
-      .inline_keyboard;
-    expect(
-      kb
-        .flat()
-        .map((b) => b.callback_data)
-        .at(-1),
-    ).toBe('id:mkt:off');
+    const markup = msg?.payload.reply_markup as
+      | { inline_keyboard: { callback_data: string }[][] }
+      | undefined;
+    const data = (markup?.inline_keyboard ?? []).flat().map((b) => b.callback_data);
+    expect(data.at(-1)).toBe('id:mkt:off');
     const [c] = await campaigns();
     expect(c).toMatchObject({ status: 'DONE', stats: { sent: 3, delivered: 3, skipped: 0 } });
   });
@@ -127,7 +124,7 @@ describe('Marketing: "new pitch opened" campaigns (e2e): TZ 4.6.1, MK-1…MK-7, 
 
   it('MK-7: pressing a campaign button opens the card and is counted as a click', async () => {
     const [c] = await campaigns();
-    const venueId = (c?.venueIds as string[])[0] as string;
+    const venueId = ((c?.venueIds ?? []) as string[])[0] as string;
     const out = await sims[0]?.press(`mk:o:${c?._id}:${venueId}`);
     const venue = await db.collection('venues').findOne({ _id: new Types.ObjectId(venueId) });
     expect(texts(out ?? []).join('\n')).toContain(`🏟 ${venue?.name}`);
