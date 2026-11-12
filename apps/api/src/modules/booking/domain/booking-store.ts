@@ -1,6 +1,7 @@
 import { DomainError, type TimeRange } from '@polya/shared-kernel';
 import type { Block, BlockId } from './block.js';
 import type { Booking, BookingId, BookingStatus } from './booking.js';
+import type { Reputation } from './reputation.js';
 
 /** Slot allaqachon band (boshqa tasdiqlangan bandlov yoki blok) — slot-lock unique index (ADR-0002). */
 export class SlotTakenError extends DomainError {
@@ -28,6 +29,8 @@ export abstract class BookingStore {
   abstract findActiveOverlapping(pitchId: string, range: TimeRange): Promise<Booking[]>;
   /** EC-B6: o'yinchining boshqa joydagi kesishgan faol bandlovlari */
   abstract findPlayerActiveOverlapping(playerId: string, range: TimeRange): Promise<Booking[]>;
+  /** TZ 4.8: `since` dan beri hisoblagichlar */
+  abstract reputation(playerId: string, since: Date): Promise<Reputation>;
   /** BK-11 */
   abstract countPlayerPending(playerId: string): Promise<number>;
   abstract listByPlayer(

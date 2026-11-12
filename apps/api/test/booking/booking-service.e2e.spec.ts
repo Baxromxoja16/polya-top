@@ -248,4 +248,10 @@ describe('BookingService (e2e): TZ 4.4, Q1, EC-B*', () => {
     expect(completed.map((b) => b.id)).toContain(r.value.booking.id);
     expect((await service.markNoShow(owner, r.value.booking.id)).ok).toBe(true);
   });
+
+  it('TZ 4.8: reputation counts completed games and no-shows from history', async () => {
+    const r = await service.reputationOf(player(12).userId);
+    expect(r).toMatchObject({ noShow: 1, completed: 0 });
+    expect(r.lastNoShowAt).not.toBeNull();
+  });
 });

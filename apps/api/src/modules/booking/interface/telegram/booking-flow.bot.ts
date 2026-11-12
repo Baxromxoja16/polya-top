@@ -14,6 +14,7 @@ import { IdentityQueries, PhoneGate } from '../../../identity/index.js';
 import { AvailabilityService } from '../../../scheduling/index.js';
 import { type BookingActor, BookingService } from '../../application/booking.service.js';
 import type { Booking } from '../../domain/booking.js';
+import { isUnreliable } from '../../domain/reputation.js';
 import { bookingErrors, bookingMessages, formatSum, ownerText } from './booking.messages.js';
 import { formatRange, formatTime } from './booking-format.js';
 
@@ -201,6 +202,8 @@ export class BookingFlowBotFeature implements BotFeature {
     } else {
       const p = players[0] as { name: string; phone: string };
       text += ownerText.single(p.name, p.phone);
+      text += `
+${await this.reputationLine(booking)}`;
       kb.text('✅ Tasdiqlash', `bk:c:${booking.id}`).text('❌ Rad etish', `bk:r:${booking.id}`);
     }
     await this.messenger.send(owner.telegramId, text, kb);
@@ -259,6 +262,14 @@ export class BookingFlowBotFeature implements BotFeature {
         }),
       );
     }
+  }
+
+  /** TZ 4.8: Owner so'rovda o'yinchi reputatsiyasini ko'radi */
+  private async reputationLine(b: Booking): Promise<string> {
+    if (!b.playerId) return '';
+    const r = await this.bookings.reputationOf(b.playerId);
+    if (r.completed + r.noShow + r.lateCancel === 0) return ownerText.newPlayer;
+    return ownerText.reputation({ ...r, unreliable: isUnreliable(r) });
   }
 
   async notifyPlayer(booking: Booking, text: (lang: Language) => string): Promise<void> {

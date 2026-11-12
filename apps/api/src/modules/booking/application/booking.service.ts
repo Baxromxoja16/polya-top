@@ -22,6 +22,7 @@ import {
   DuplicateActiveRequestError,
   SlotTakenError,
 } from '../domain/booking-store.js';
+import { isRestricted, REPUTATION_WINDOW_DAYS, type Reputation } from '../domain/reputation.js';
 
 export interface BookingActor {
   userId: string;
@@ -47,6 +48,7 @@ export type RequestError =
   | 'TOO_MANY_PENDING'
   | 'QUEUE_FULL'
   | 'DUPLICATE'
+  | 'RESTRICTED'
   | QuoteError;
 
 export interface RequestOutcome {
@@ -86,6 +88,9 @@ export class BookingService {
     input: { pitchId: string; start: Date; hours: number },
   ): Promise<Result<RequestOutcome, RequestError>> {
     if (!actor.phone) return err('PHONE_REQUIRED');
+    // TZ 4.8: ko'p marta kelmagan o'yinchi vaqtincha bandlay olmaydi
+    if (isRestricted(await this.reputationOf(actor.userId), this.clock.now()))
+      return err('RESTRICTED');
     const context = await this.catalog.pitchContext(input.pitchId);
     if (!context?.venue.isPublic || !context.isBookable) return err('NOT_AVAILABLE');
 
@@ -344,6 +349,12 @@ export class BookingService {
       }
     }
     return { expired, completed };
+  }
+
+  /** TZ 4.8 */
+  reputationOf(playerId: string): Promise<Reputation> {
+    const since = new Date(this.clock.now().getTime() - REPUTATION_WINDOW_DAYS * 86_400_000);
+    return this.store.reputation(playerId, since);
   }
 
   /** TZ 4.6: o'yindan 2 soat oldin eslatma (faqat bot orqali bandlovlar) */

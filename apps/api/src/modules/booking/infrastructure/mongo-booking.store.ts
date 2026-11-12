@@ -73,6 +73,23 @@ export class MongoBookingStore extends BookingStore implements OnModuleInit {
     });
   }
 
+  async reputation(playerId: string, since: Date) {
+    if (!Types.ObjectId.isValid(playerId))
+      return { completed: 0, noShow: 0, lateCancel: 0, lastNoShowAt: null };
+    const base = { playerId: oid(playerId), end: { $gte: since } };
+    const [completed, noShow, lateCancel, last] = await Promise.all([
+      this.bookings.countDocuments({ ...base, status: 'COMPLETED' }),
+      this.bookings.countDocuments({ ...base, status: 'NO_SHOW' }),
+      this.bookings.countDocuments({ ...base, status: 'CANCELLED_BY_PLAYER', lateCancel: true }),
+      this.bookings
+        .findOne({ ...base, status: 'NO_SHOW' })
+        .sort({ updatedAt: -1 })
+        .lean<BookingDocument>()
+        .exec(),
+    ]);
+    return { completed, noShow, lateCancel, lastNoShowAt: last?.updatedAt ?? null };
+  }
+
   async countPlayerPending(playerId: string): Promise<number> {
     if (!Types.ObjectId.isValid(playerId)) return 0;
     return this.bookings.countDocuments({ playerId: oid(playerId), status: 'PENDING' });

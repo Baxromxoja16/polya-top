@@ -79,6 +79,7 @@ export const bookingErrors = defineMessages(
     TOO_MANY_PENDING: "Sizda 3 ta javob kutayotgan so'rov bor. Avval ular hal bo'lsin.",
     QUEUE_FULL: "Bu vaqtga so'rovlar ko'p (3 ta). Boshqa vaqtni tanlang.",
     DUPLICATE: "Bu vaqtga so'rovingiz allaqachon yuborilgan.",
+    RESTRICTED: "Ko'p marta kelmaganingiz sababli bandlash vaqtincha (30 kun) yopilgan.",
     NO_SCHEDULE: 'Bu maydonning jadvali kiritilmagan.',
     OUTSIDE_HOURS: 'Bu vaqt ish vaqtidan tashqarida.',
     TOO_SOON: "O'yin boshlanishiga juda oz qoldi — egasiga qo'ng'iroq qiling.",
@@ -93,6 +94,7 @@ export const bookingErrors = defineMessages(
     TOO_MANY_PENDING: 'У вас 3 запроса ждут ответа. Дождитесь решения по ним.',
     QUEUE_FULL: 'На это время слишком много запросов (3). Выберите другое время.',
     DUPLICATE: 'Ваш запрос на это время уже отправлен.',
+    RESTRICTED: 'Из-за частых неявок бронирование временно (30 дней) закрыто.',
     NO_SCHEDULE: 'Для этого поля не задано расписание.',
     OUTSIDE_HOURS: 'Это время вне часов работы.',
     TOO_SOON: 'До начала слишком мало времени — позвоните владельцу.',
@@ -110,6 +112,9 @@ export const ownerText = {
     `\n\n🟡 Bu vaqtga ${n} ta so'rov bor. Avval birinchisi bilan bog'laning; u bandlamasa — keyingisini tasdiqlang:`,
   queueLine: (i: number, name: string, phone: string, at: string) =>
     `${i}. 👤 ${name} · 📱 ${phone} · ${at} da`,
+  reputation: (p: { completed: number; noShow: number; lateCancel: number; unreliable: boolean }) =>
+    `${p.unreliable ? "⚠️ Ishonchsiz o'yinchi · " : ''}🎯 ${p.completed} marta o'ynagan · 🚫 ${p.noShow} marta kelmagan${p.lateCancel ? ` · ↩️ ${p.lateCancel} kech bekor` : ''}`,
+  newPlayer: "🆕 Yangi o'yinchi (tarixi yo'q)",
   single: (name: string, phone: string) =>
     `\n\n👤 ${name}\n📱 ${phone}\nQo'ng'iroq qilib kelishing, keyin tasdiqlang.`,
   confirmed: (name: string, by: string) => `\n\n✅ Tasdiqlandi: ${name} — ${by}`,
