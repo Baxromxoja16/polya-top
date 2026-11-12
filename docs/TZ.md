@@ -778,3 +778,21 @@ Har bosqich oxirida: kod + testlar → siz tekshirasiz → tasdiqlaysiz → keyi
 - [x] 11-bo'lim — barcha savollarga javob berildi
 - [x] 12-bo'lim — edge case'lar ro'yxati to'liq deb topildi
 - [x] 10-bo'lim — bosqichlar tartibi tasdiqlandi → **0-bosqichdan kod yozishni boshlaymiz**
+
+---
+
+## 16. Amalga oshirish jurnali
+
+| Bosqich | Holat | Izoh |
+|---|---|---|
+| 0 — Fundament | ✅ | ADR-0001…0004 |
+| 1 — Identity + bot | ✅ | ADR-0005 |
+| 2 — Catalog + Search | ✅ | Geography, Owner arizasi, onboarding, admin ko'rigi, boshqaruv menyusi, qidiruv, kartochka, sevimlilar |
+
+### TZ'dan chetlanishlar (asoslangan)
+| Joy | TZ | Amalda | Sabab |
+|---|---|---|---|
+| EC-O1 | Qoralama DB'da, 30 kun | Qoralama Redis sessiyasida, 7 kun (sessiya TTL) | Yarim to'ldirilgan stadion bazada "axlat" bo'lib qolmaydi; 4 ta maydon uchun yetarli |
+| EC-O6 | Topilmagan so'rovlar Admin uchun yig'iladi | Strukturali log (`search.miss`) | Admin paneli (7-bosqich) shu log'dan hisobot oladi |
+| 4.2 | Admin boshqaruvi bot orqali | Bot buyruqlari (`/admin`, `/cities`, `/addcity`, `/pending` ...) | Adminlar ichki xodim; to'liq web panel — v2 |
+| VC-5b, VC-5c, VC-5d | "Hozir bo'sh", "Yana bandlash", "Bo'shasa xabar ber" | 3–6a-bosqichlarda | Bo'sh slotlar (3) va bandlovlar (4) talab qilinadi |
