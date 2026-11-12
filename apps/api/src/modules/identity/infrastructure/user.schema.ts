@@ -52,3 +52,5 @@ UserSchema.index(
   { phone: 1 },
   { unique: true, name: 'uniq_phone', partialFilterExpression: { phone: { $type: 'string' } } },
 );
+// TZ MK-6: marketing auditoriyasi shahar bo'yicha, `_id` kursori bilan bo'laklab o'qiladi
+UserSchema.index({ cityId: 1, _id: 1 }, { name: 'city_cursor' });

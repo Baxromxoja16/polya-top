@@ -8,6 +8,7 @@ import { AdminDirectory, StaticAdminDirectory } from './application/admin-direct
 import { CityCatalog } from './application/city-catalog.js';
 import { EnsureUserUseCase } from './application/ensure-user.use-case.js';
 import { IdentityQueries } from './application/identity.queries.js';
+import { MarketingAudience } from './application/marketing-audience.js';
 import {
   ReviewOwnerApplicationUseCase,
   SubmitOwnerApplicationUseCase,
@@ -23,6 +24,7 @@ import {
 import { OwnerApplicationRepository } from './domain/owner-application.js';
 import { UserRepository } from './domain/user.repository.js';
 import { GeographyCityCatalog } from './infrastructure/geography-city-catalog.js';
+import { MongoMarketingAudience } from './infrastructure/mongo-marketing-audience.js';
 import {
   MongoOwnerApplicationRepository,
   OWNER_APPLICATION_MODEL,
@@ -58,6 +60,7 @@ import { PhoneGate } from './interface/telegram/phone-gate.js';
     ReviewOwnerApplicationUseCase,
     EnsureUserUseCase,
     IdentityQueries,
+    { provide: MarketingAudience, useClass: MongoMarketingAudience },
     ChangeCityUseCase,
     ShareContactUseCase,
     ChangeLanguageUseCase,
@@ -69,7 +72,7 @@ import { PhoneGate } from './interface/telegram/phone-gate.js';
     IdentityBotFeature,
     OwnerApplicationBotFeature,
   ],
-  exports: [PhoneGate, IdentityQueries],
+  exports: [PhoneGate, IdentityQueries, MarketingAudience],
 })
 export class IdentityModule implements OnModuleInit {
   constructor(
