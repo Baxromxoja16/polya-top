@@ -1,5 +1,5 @@
 import { ConcurrencyConflictError } from '@polya/shared-kernel';
-import type { Model, Types } from 'mongoose';
+import type { ClientSession, Model, Types } from 'mongoose';
 
 export interface VersionedDocument {
   _id: Types.ObjectId;
@@ -17,16 +17,19 @@ export async function saveVersioned<T extends VersionedDocument>(
   model: Model<T>,
   doc: T,
   currentVersion: number,
+  session?: ClientSession,
 ): Promise<void> {
+  const options = session ? { session } : {};
   if (currentVersion === 0) {
     // biome-ignore lint/suspicious/noExplicitAny: native driver tiplari Mongoose generiklari bilan mos emas
-    await model.collection.insertOne(doc as any);
+    await model.collection.insertOne(doc as any, options);
     return;
   }
   const { _id, ...fields } = doc;
   const result = await model.collection.updateOne(
     { _id, version: currentVersion },
     { $set: fields },
+    options,
   );
   if (result.matchedCount === 0) {
     throw new ConcurrencyConflictError('Aggregate was modified concurrently', {

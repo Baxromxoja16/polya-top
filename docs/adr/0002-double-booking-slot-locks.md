@@ -28,3 +28,8 @@ Q1 qarori bo'yicha `PENDING` so'rovlar slotni egallamaydi, ular navbatga turadi.
 - ➕ Bandlov va blok bir xil mexanizmdan foydalanadi.
 - ➖ Lokal muhitda ham replica set kerak (docker-compose buni avtomatik qiladi).
 - ➖ To'r o'zgarsa (masalan, 30 daqiqa), lock'larni migratsiya qilish kerak bo'ladi.
+
+## Amalga oshirishdan keyingi aniqlik (2026-11-12)
+- **`withTransaction` avtomatik qayta urinishi ishlatilmaydi.** Bir slot uchun parallel tranzaksiyalar MongoDB'da `WriteConflict` (TransientTransactionError) beradi. Driver ularni 120 soniyagacha qayta urinadi: 50 ta parallel tasdiqlashda bu "retry bo'roni"ga aylanib, test 10 daqiqada ham tugamadi.
+- Yechim — bitta urinishli tranzaksiya: lock qo'yishdagi `E11000` **yoki** `WriteConflict` → `SlotTakenError` (biznes natija: "vaqt boshqaga berildi"); bandlov hujjatidagi `WriteConflict` → `ConcurrencyConflictError`. Faqat `UnknownTransactionCommitResult` holatida commit qayta yuboriladi.
+- Natija: 50 ta parallel tasdiqlash ~1 soniyada, aniq bitta g'olib bilan yakunlanadi (`test/booking/booking-store.e2e.spec.ts`).
