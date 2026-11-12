@@ -791,6 +791,7 @@ Har bosqich oxirida: kod + testlar → siz tekshirasiz → tasdiqlaysiz → keyi
 | 3 — Schedule & Pricing | ✅ | Hafta kunlari, istisno kunlar, narx qoidalari, bo'sh slotlar (Availability), "Bo'sh maydon topish", "Hozir bo'sh", kartochkada bo'sh vaqtlar to'ri |
 | 4 — Booking (core) | ✅ | So'rovlar navbati, kontakt almashinuvi, tasdiqlash/rad etish, slot-lock'lar (50 parallel → 1 g'olib), qo'lda bandlov, blok, bekor qilish, NO_SHOW, muddat/yakunlash fon jarayoni, "Mening bandlovlarim", "Yana bandlash" |
 | 5 — Notifications + Jobs | ✅ | BullMQ yetkazish navbati (rate limit, 429, 403 → bloklangan), eslatma 2 soat oldin, Owner'ga eslatma 10 daqiqa oldin, kunlik jadval 21:00 — ADR-0006 |
+| 6 — Reviews + Reputation | ✅ | Bandlovdan keyin baholash (1–5, izoh, 7 kun tahrir), Owner javobi, shikoyat + avto-moderatsiya, stadion reytingi kartochkada, o'yinchi ishonchliligi (NO_SHOW/bekor qilish), maydon holati xabarlari (RV-8, 24 soat) |
 
 ### TZ'dan chetlanishlar (asoslangan)
 | Joy | TZ | Amalda | Sabab |
@@ -805,4 +806,6 @@ Har bosqich oxirida: kod + testlar → siz tekshirasiz → tasdiqlaysiz → keyi
 | EC-S2, EC-S3, EC-B9 | Jadval/istisno/maydon holati o'zgarganda mavjud bandlovlar haqida ogohlantirish | 7-bosqichda | Asosiy oqim ishlaydi; ogohlantirish — qulaylik |
 | BK-3e | Navbat ≤ 3 | Parallel ikki so'rov kamdan-kam 4-chisini o'tkazib yuborishi mumkin | Navbat — yumshoq cheklov; double booking'ga ta'sir qilmaydi |
 | SP-6, SP-7 | Stadion darajasida sozlanadi | Hozircha platforma standarti (14 kun, 30 daqiqa, maks. 4 soat) — `BookingPolicy` | Owner sozlamalari 4-bosqichda bandlov sozlamalari bilan birga |
+| RV-2 | Mezonlar (yoritish, kiyinish xonasi...) va rasm | Faqat umumiy baho + matn | MVP uchun yetarli; mezonlar keyingi iteratsiyada |
+| RV-8 | Holat xabari kartochkada | "Sharhlar" ro'yxati sarlavhasida | Kartochka qisqa qoladi; xabar 24 soat yashaydi |
 | 5.2 | Sana → vaqt → lokatsiya → natija | Sana → vaqt → natija (shahar bo'yicha, arzonidan) | Lokatsiya so'rash qadamni uzaytiradi; masofa bo'yicha qidiruv "📍 Yaqin atrofdagi"da bor |
