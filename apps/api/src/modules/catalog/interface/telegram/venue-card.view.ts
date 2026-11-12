@@ -42,7 +42,7 @@ export function distanceLabel(meters: number | null, lang: Language): string | n
 export function listLine(item: VenueListItem, index: number, lang: Language): string {
   const m = searchMessages[lang];
   const parts = [
-    `${index}. ${item.venue.name}`,
+    `${index}. ${item.recommended ? `${m.recommended} ` : ''}${item.venue.name}`,
     item.venue.rating.count > 0 ? `⭐ ${item.venue.rating.avg.toFixed(1)}` : null,
     distanceLabel(item.distanceMeters, lang),
     item.minPricePerHour ? m.priceFrom(formatSum(item.minPricePerHour.amount)) : null,

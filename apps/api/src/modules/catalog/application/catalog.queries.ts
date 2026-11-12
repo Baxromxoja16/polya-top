@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { type GeoPoint, type Money, searchTokens } from '@polya/shared-kernel';
 import { type CityId, GeographyQueries, type LandmarkView } from '../../geography/index.js';
 import { type PitchSetupView, SchedulingFacade } from '../../scheduling/index.js';
+import { FeatureGate } from '../../subscription/index.js';
 import type { Pitch } from '../domain/pitch.js';
 import { PitchRepository, VenueRepository } from '../domain/repositories.js';
 import type { Venue, VenueId } from '../domain/venue.js';
@@ -30,7 +31,12 @@ export interface VenueListItem {
   venue: Venue;
   distanceMeters: number | null;
   minPricePerHour: Money | null;
+  /** VC-5a: PREMIUM stadion — "⭐ Tavsiya etiladi" (sahifada ko'pi bilan 2 ta, yuqorida) */
+  recommended?: boolean;
 }
+
+/** TZ VC-5a / 4.9 */
+export const RECOMMENDED_PER_PAGE = 2;
 
 export interface SearchInput {
   cityId: string;
@@ -88,6 +94,7 @@ export class CatalogQueries {
     private readonly pitches: PitchRepository,
     private readonly scheduling: SchedulingFacade,
     private readonly geography: GeographyQueries,
+    private readonly features: FeatureGate,
   ) {}
 
   async venueCard(idOrSlug: string): Promise<VenueCardView | null> {
@@ -232,13 +239,26 @@ export class CatalogQueries {
       seen.add(h.venue.id);
       return true;
     });
-    const hits = await this.withPrices(merged.slice(offset, offset + limit));
+    const hits = await this.recommendFirst(
+      await this.withPrices(merged.slice(offset, offset + limit)),
+    );
 
     if (hits.length === 0 && input.query) {
       // TZ EC-O6: topilmagan so'rovlar — sinonimlar lug'atini to'ldirish uchun
       this.#logger.log({ query: input.query, cityId: input.cityId }, 'search.miss');
     }
     return { hits, landmarkChoices, usedLandmark };
+  }
+
+  /**
+   * VC-5a: sahifadagi (mos keladigan!) PREMIUM stadionlardan ko'pi bilan 2 tasi belgisi bilan yuqoriga chiqadi.
+   * Mos kelmaydigan premium stadion qidiruvga "qo'shilmaydi" — reklama natijani buzmaydi.
+   */
+  private async recommendFirst(items: VenueListItem[]): Promise<VenueListItem[]> {
+    const premium = await this.features.premiumAmong(items.map((i) => i.venue.id));
+    const top = items.filter((i) => premium.has(i.venue.id)).slice(0, RECOMMENDED_PER_PAGE);
+    const rest = items.filter((i) => !top.includes(i));
+    return [...top.map((i) => ({ ...i, recommended: true })), ...rest];
   }
 
   private async withPrices(

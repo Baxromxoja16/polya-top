@@ -1,5 +1,7 @@
+import { getConnectionToken } from '@nestjs/mongoose';
 import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { GeoPoint, localizedText, Money } from '@polya/shared-kernel';
+import type { Connection } from 'mongoose';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Actor } from '../../src/modules/catalog/application/actor.js';
 import { RegisterVenueUseCase } from '../../src/modules/catalog/application/register-venue.use-case.js';
@@ -7,6 +9,7 @@ import { VenueManagementService } from '../../src/modules/catalog/application/ve
 import type { VenueId } from '../../src/modules/catalog/domain/venue.js';
 import { type CityView, GeographyAdminService } from '../../src/modules/geography/index.js';
 import { OpeningHours } from '../../src/modules/scheduling/index.js';
+import { FeatureGate } from '../../src/modules/subscription/index.js';
 import {
   type ApiCall,
   buttons,
@@ -75,6 +78,8 @@ describe('Player search and venue card (e2e): TZ VC-4…VC-7, EC-O6, EC-O7', () 
     await make('Olmaliq Arena', '5-mikrorayon, 21-maktab orqasida', 1);
     await make('Metallurg', "Stadion ko'chasi, zavod yonida", 6);
     await make('Hidden Pending', 'Tasdiqlanmagan stadion joyi', 0.5, false);
+    // Asoschi trial'ini olib tashlaymiz: qidiruv testlari FREE holatda (VC-5a alohida test)
+    await app.get<Connection>(getConnectionToken()).collection('subscriptions').deleteMany({});
 
     player = new TelegramUserSim(test.bot, calls, 960_001);
     await player.send('/start');
@@ -165,5 +170,21 @@ describe('Player search and venue card (e2e): TZ VC-4…VC-7, EC-O6, EC-O7', () 
 
     await player.press(fav);
     expect(texts(await player.send('⭐ Sevimlilar'))[0]).toContain("ro'yxati bo'sh");
+  });
+
+  it('VC-5a: a matching PREMIUM venue is shown first with the "Tavsiya etiladi" mark', async () => {
+    const venues = app.get<Connection>(getConnectionToken()).collection('venues');
+    const metallurg = await venues.findOne({ name: 'Metallurg' });
+    await app.get(FeatureGate).extend(String(metallurg?._id), 30, 'admin');
+    await player.send('📍 Yaqin atrofdagi stadionlar');
+    const list = texts(await player.sendLocation(C.lat, C.lng)).find((t) =>
+      t.startsWith('🔎'),
+    ) as string;
+    expect(list).toContain('1. ⭐ Tavsiya etiladi · Metallurg');
+    expect(list).toContain('2. Olmaliq Arena');
+    // Mos kelmaydigan qidiruvda premium stadion "qo'shilmaydi"
+    const other = texts(await player.send('21maktab'))[0];
+    expect(other).toContain('1. Olmaliq Arena');
+    expect(other).not.toContain('Metallurg');
   });
 });
