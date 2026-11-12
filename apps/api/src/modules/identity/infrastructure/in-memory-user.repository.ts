@@ -64,6 +64,7 @@ function snapshot(user: User): UserProps {
     telegramId: user.telegramId,
     telegramProfile: { ...user.telegramProfile },
     customName: user.customName,
+    cityId: user.cityId,
     phone: user.phone,
     phoneVerifiedAt: user.phoneVerifiedAt,
     language: user.language,

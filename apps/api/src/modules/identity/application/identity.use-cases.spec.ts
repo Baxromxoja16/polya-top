@@ -3,9 +3,14 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { TelegramId } from '../domain/user.js';
 import { InMemoryUserRepository } from '../infrastructure/in-memory-user.repository.js';
 import { StaticAdminDirectory } from './admin-directory.js';
+import { StaticCityCatalog } from './city-catalog.js';
 import { EnsureUserUseCase } from './ensure-user.use-case.js';
 import { ShareContactUseCase } from './share-contact.use-case.js';
-import { RenameUserUseCase, SetBotBlockedUseCase } from './update-profile.use-cases.js';
+import {
+  ChangeCityUseCase,
+  RenameUserUseCase,
+  SetBotBlockedUseCase,
+} from './update-profile.use-cases.js';
 
 const profile = { firstName: 'Ali', lastName: null, username: 'ali' };
 
@@ -23,6 +28,7 @@ describe('Identity use cases', () => {
       clock,
       new ObjectIdGenerator(),
       new StaticAdminDirectory([777]),
+      new StaticCityCatalog(),
     );
     share = new ShareContactUseCase(repo, clock);
   });
@@ -156,13 +162,73 @@ describe('EnsureUser: ADMIN role follows ADMIN_TELEGRAM_IDS', () => {
     const ids = new ObjectIdGenerator();
     const profile = { firstName: 'Admin', lastName: null, username: null };
 
-    const asAdmin = new EnsureUserUseCase(repo, clock, ids, new StaticAdminDirectory([777]));
+    const asAdmin = new EnsureUserUseCase(
+      repo,
+      clock,
+      ids,
+      new StaticAdminDirectory([777]),
+      new StaticCityCatalog(),
+    );
     const first = await asAdmin.execute({ telegramId: 777, profile, interacted: true });
     expect(first.user.roles).toEqual(['PLAYER', 'ADMIN']);
 
-    const removed = new EnsureUserUseCase(repo, clock, ids, new StaticAdminDirectory([]));
+    const removed = new EnsureUserUseCase(
+      repo,
+      clock,
+      ids,
+      new StaticAdminDirectory([]),
+      new StaticCityCatalog(),
+    );
     const second = await removed.execute({ telegramId: 777, profile, interacted: true });
     expect(second.user.roles).toEqual(['PLAYER']);
     expect((await repo.findByTelegramId(777 as TelegramId))?.roles).toEqual(['PLAYER']);
+  });
+});
+
+describe('City selection (CT-4, EC-C1)', () => {
+  const profile = { firstName: 'Ali', lastName: null, username: null };
+  const olmaliq = { id: 'c1', name: { uz: 'Olmaliq', ru: 'Алмалык' } };
+  const angren = { id: 'c2', name: { uz: 'Angren', ru: 'Ангрен' } };
+
+  const setup = (cities: (typeof olmaliq)[]) => {
+    const repo = new InMemoryUserRepository();
+    const clock = new FixedClock(new Date('2026-11-12T10:00:00Z'));
+    const catalog = new StaticCityCatalog(cities);
+    return {
+      repo,
+      ensure: new EnsureUserUseCase(
+        repo,
+        clock,
+        new ObjectIdGenerator(),
+        new StaticAdminDirectory([]),
+        catalog,
+      ),
+      changeCity: new ChangeCityUseCase(repo, clock, catalog),
+    };
+  };
+
+  it('EC-C1: the only active city is assigned without asking', async () => {
+    const { ensure } = setup([olmaliq]);
+    expect((await ensure.execute({ telegramId: 1, profile, interacted: true })).user.cityId).toBe(
+      'c1',
+    );
+  });
+
+  it('with several cities the user stays without a city until choosing', async () => {
+    const { ensure, changeCity } = setup([olmaliq, angren]);
+    expect(
+      (await ensure.execute({ telegramId: 1, profile, interacted: true })).user.cityId,
+    ).toBeNull();
+    const result = await changeCity.execute({ telegramId: 1, cityId: 'c2' });
+    expect(result.ok && result.value.cityId).toBe('c2');
+  });
+
+  it('CT-4: an inactive or unknown city cannot be chosen', async () => {
+    const { ensure, changeCity } = setup([olmaliq, angren]);
+    await ensure.execute({ telegramId: 1, profile, interacted: true });
+    expect(await changeCity.execute({ telegramId: 1, cityId: 'zzz' })).toEqual({
+      ok: false,
+      error: 'CITY_NOT_AVAILABLE',
+    });
   });
 });

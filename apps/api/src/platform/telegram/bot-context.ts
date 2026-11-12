@@ -11,6 +11,7 @@ export interface CurrentUser {
   language: Language;
   displayName: string | null;
   phone: string | null;
+  cityId: string | null;
   roles: readonly string[];
   /** Shu update'da yaratildi (birinchi /start). */
   isNew: boolean;

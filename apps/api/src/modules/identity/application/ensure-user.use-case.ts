@@ -3,6 +3,7 @@ import { Clock, IdGenerator, languageFromLocale } from '@polya/shared-kernel';
 import { type TelegramId, type TelegramProfile, User, type UserId } from '../domain/user.js';
 import { UserAlreadyExistsError, UserRepository } from '../domain/user.repository.js';
 import { AdminDirectory } from './admin-directory.js';
+import { CityCatalog } from './city-catalog.js';
 
 export interface EnsureUserInput {
   telegramId: number;
@@ -33,6 +34,7 @@ export class EnsureUserUseCase {
     private readonly clock: Clock,
     private readonly ids: IdGenerator,
     private readonly admins: AdminDirectory,
+    private readonly cities: CityCatalog,
   ) {}
 
   async execute(input: EnsureUserInput): Promise<EnsureUserOutput> {
@@ -48,6 +50,7 @@ export class EnsureUserUseCase {
       now: this.clock.now(),
     });
     this.syncAdminRole(user);
+    await this.assignSoleCity(user);
     try {
       await this.users.save(user);
       return { user, isNew: true };
@@ -64,8 +67,17 @@ export class EnsureUserUseCase {
     const profileChanged = user.syncTelegramProfile(input.profile, now);
     const unblocked = input.interacted && user.markBotUnblocked(now);
     const rolesChanged = this.syncAdminRole(user);
-    if (profileChanged || unblocked || rolesChanged) await this.users.save(user);
+    const cityAssigned = await this.assignSoleCity(user);
+    if (profileChanged || unblocked || rolesChanged || cityAssigned) await this.users.save(user);
     return user;
+  }
+
+  /** TZ EC-C1: faol shahar bitta bo'lsa — so'ramasdan o'sha tanlanadi. */
+  private async assignSoleCity(user: User): Promise<boolean> {
+    if (user.cityId) return false;
+    const active = await this.cities.activeCities();
+    const only = active.length === 1 ? active[0] : undefined;
+    return only ? user.changeCity(only.id, this.clock.now()) : false;
   }
 
   /** ADMIN roli env bilan sinxron: ro'yxatdan chiqarilgan odam keyingi update'dayoq huquqni yo'qotadi. */

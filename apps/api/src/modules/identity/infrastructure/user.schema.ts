@@ -10,6 +10,7 @@ export interface UserDocument {
   lastName: string | null;
   username: string | null;
   customName: string | null;
+  cityId: string | null;
   phone: string | null;
   phoneVerifiedAt: Date | null;
   language: string;
@@ -29,6 +30,7 @@ export const UserSchema = new Schema<UserDocument>(
     lastName: { type: String, default: null },
     username: { type: String, default: null },
     customName: { type: String, default: null },
+    cityId: { type: String, default: null },
     phone: { type: String, default: null },
     phoneVerifiedAt: { type: Date, default: null },
     language: { type: String, required: true },

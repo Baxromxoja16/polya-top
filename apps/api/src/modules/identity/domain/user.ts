@@ -32,6 +32,8 @@ export interface UserProps {
   telegramProfile: TelegramProfile;
   /** Foydalanuvchi o'zi kiritgan ism (TZ ID-5). Telegram profili uni almashtirmaydi. */
   customName: string | null;
+  /** Tanlangan shahar (TZ ID-5, CT-4). Qidiruv shu shahar doirasida (CT-5). */
+  cityId: string | null;
   phone: PhoneNumber | null;
   phoneVerifiedAt: Date | null;
   language: Language;
@@ -70,6 +72,7 @@ export class User extends AggregateRoot<UserId> {
         telegramId: params.telegramId,
         telegramProfile: normalizeProfile(params.profile),
         customName: null,
+        cityId: null,
         phone: null,
         phoneVerifiedAt: null,
         language: params.language,
@@ -101,6 +104,9 @@ export class User extends AggregateRoot<UserId> {
   }
   get telegramProfile(): Readonly<TelegramProfile> {
     return this.#props.telegramProfile;
+  }
+  get cityId(): string | null {
+    return this.#props.cityId;
   }
   get customName(): string | null {
     return this.#props.customName;
@@ -194,6 +200,13 @@ export class User extends AggregateRoot<UserId> {
     }
     this.#props.customName = trimmed;
     this.touch(now);
+  }
+
+  changeCity(cityId: string, now: Date): boolean {
+    if (this.#props.cityId === cityId) return false;
+    this.#props.cityId = cityId;
+    this.touch(now);
+    return true;
   }
 
   changeLanguage(language: Language, now: Date): boolean {
