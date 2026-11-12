@@ -21,6 +21,7 @@
     "@nestjs/terminus": "12.1.0",
     "@polya/contracts": "workspace:*",
     "@polya/shared-kernel": "workspace:*",
+    "bullmq": "6.7.4",
     "fastify": "5.12.8",
     "grammy": "1.46.0",
     "ioredis": "6.0.0",

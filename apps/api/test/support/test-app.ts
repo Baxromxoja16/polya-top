@@ -55,6 +55,7 @@ export async function createTestApp(
     NODE_ENV: 'test',
     LOG_LEVEL: 'silent',
     BOOKING_SWEEP_SECONDS: '0',
+    NOTIFICATIONS_MODE: 'direct',
     ...env,
   });
 

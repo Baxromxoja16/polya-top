@@ -1,7 +1,8 @@
-import { Module } from '@nestjs/common';
+import { Module, type OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import type { Env } from '../../config/env.schema.js';
+import { TelegramMessenger } from '../../platform/telegram/telegram-messenger.js';
 import { GeographyModule } from '../geography/index.js';
 import { AdminDirectory, StaticAdminDirectory } from './application/admin-directory.js';
 import { CityCatalog } from './application/city-catalog.js';
@@ -68,4 +69,16 @@ import { PhoneGate } from './interface/telegram/phone-gate.js';
   ],
   exports: [PhoneGate, IdentityQueries],
 })
-export class IdentityModule {}
+export class IdentityModule implements OnModuleInit {
+  constructor(
+    private readonly messenger: TelegramMessenger,
+    private readonly setBotBlocked: SetBotBlockedUseCase,
+  ) {}
+
+  /** TZ ID-6, EC-T1: xabar 403 bilan qaytsa — foydalanuvchi botni bloklagan, keyingi xabarnomalar to'xtaydi. */
+  onModuleInit(): void {
+    this.messenger.onBlocked((chatId) =>
+      this.setBotBlocked.execute({ telegramId: chatId, blocked: true }),
+    );
+  }
+}

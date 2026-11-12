@@ -31,6 +31,9 @@ export const envSchema = z
     /** Tashqi HTTPS manzil, masalan https://api.polya.top — webhook shu yerga o'rnatiladi. */
     PUBLIC_URL: z.url({ protocol: /^https$/ }).optional(),
 
+    /** TZ 4.6: `queue` — BullMQ navbati (rate limit, retry); `direct` — darhol (testlar, lokal). */
+    NOTIFICATIONS_MODE: z.enum(['queue', 'direct']).default('queue'),
+
     /** TZ BK-3f, BK-9: muddati o'tgan so'rovlar/tugagan o'yinlar tekshiruvi oralig'i. 0 — o'chiq. */
     BOOKING_SWEEP_SECONDS: z.coerce.number().int().min(0).max(3600).default(60),
 

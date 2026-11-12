@@ -23,8 +23,23 @@ export const TEST_BOT_INFO = {
 /**
  * Tarmoqqa chiqmaydigan bot: barcha Telegram API chaqiruvlari `calls`ga yoziladi va soxta javob qaytadi.
  */
-export function createTestBot(): { bot: Bot<BotContext>; calls: ApiCall[] } {
+export interface FakeFailure {
+  error_code: number;
+  description: string;
+  parameters?: { retry_after?: number };
+}
+
+/**
+ * Tarmoqqa chiqmaydigan bot: barcha Telegram API chaqiruvlari `calls`ga yoziladi va soxta javob qaytadi.
+ * `failNext(chatId, ...)` — shu chatga keyingi yuborish xato bilan qaytadi (403/429 simulyatsiyasi).
+ */
+export function createTestBot(): {
+  bot: Bot<BotContext>;
+  calls: ApiCall[];
+  failNext: (chatId: number, failure: FakeFailure) => void;
+} {
   const calls: ApiCall[] = [];
+  const failures = new Map<number, FakeFailure[]>();
   const bot = new Bot<BotContext>('42:TEST-TOKEN-0000000000000000000000000000', {
     botInfo: TEST_BOT_INFO,
   });
@@ -32,6 +47,10 @@ export function createTestBot(): { bot: Bot<BotContext>; calls: ApiCall[] } {
   bot.api.config.use(async (_prev, method, payload) => {
     const p = (payload ?? {}) as ApiCall['payload'];
     calls.push({ method, payload: p });
+    const queued = failures.get(Number(p.chat_id));
+    const failure = queued?.shift();
+    // biome-ignore lint/suspicious/noExplicitAny: soxta Telegram xato javobi
+    if (failure) return { ok: false, ...failure } as any;
     const result = method.startsWith('send')
       ? {
           message_id: ++messageId,
@@ -43,7 +62,10 @@ export function createTestBot(): { bot: Bot<BotContext>; calls: ApiCall[] } {
     // biome-ignore lint/suspicious/noExplicitAny: soxta Telegram javobi
     return { ok: true, result } as any;
   });
-  return { bot, calls };
+  const failNext = (chatId: number, failure: FakeFailure) => {
+    failures.set(chatId, [...(failures.get(chatId) ?? []), failure]);
+  };
+  return { bot, calls, failNext };
 }
 
 let updateSeq = 1;
