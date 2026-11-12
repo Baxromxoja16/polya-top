@@ -275,7 +275,6 @@ describe('Identity bot (e2e): TZ ID-1…ID-6', () => {
 
     it('a sticker (non-text) gets the menu', async () => {
       const u = sim(1001);
-      // biome-ignore lint/suspicious/noExplicitAny: raw update
       const out = await u.act({
         message: {
           message_id: 1,
@@ -292,6 +291,7 @@ describe('Identity bot (e2e): TZ ID-1…ID-6', () => {
             is_video: false,
           },
         },
+        // biome-ignore lint/suspicious/noExplicitAny: raw update
       } as any);
       expect(texts(out)).toEqual(["Menyudan kerakli bo'limni tanlang 👇"]);
     });
