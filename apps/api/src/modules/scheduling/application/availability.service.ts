@@ -8,14 +8,20 @@ import {
   PricingPlanRepository,
 } from '../domain/pitch-schedule.js';
 import { type Slot, slotsOf } from '../domain/slots.js';
+import { DiscountRegistry, type PitchDiscounts } from './discounts.js';
 import { EMPTY_OCCUPANCY, OccupancyRegistry, type PitchOccupancy } from './occupancy.js';
+
+const NO_DISCOUNTS: PitchDiscounts = new Map();
 
 export type SlotStatus = 'FREE' | 'REQUESTED' | 'BOOKED' | 'PAST';
 
 export interface SlotView extends Slot {
   status: SlotStatus;
   pendingRequests: number;
+  /** Chegirma qo'llangan narx (4.9) */
   price: Money;
+  /** 0 — chegirma yo'q */
+  discountPercent: number;
 }
 
 export interface Quote {
@@ -24,7 +30,7 @@ export interface Quote {
   businessDate: LocalDate;
   total: Money;
   /** TZ EC-S5: har bir soat narxi alohida */
-  breakdown: { start: Date; price: Money }[];
+  breakdown: { start: Date; price: Money; discountPercent: number }[];
   /** Ichida 🟡 so'rov bor slotlar soni (BK-3d navbat haqida ogohlantirish) */
   pendingRequests: number;
 }
@@ -48,6 +54,7 @@ export class AvailabilityService {
     private readonly pricing: PricingPlanRepository,
     private readonly occupancy: OccupancyRegistry,
     private readonly clock: Clock,
+    private readonly discounts: DiscountRegistry,
   ) {}
 
   /** Bandlash mumkin bo'lgan biznes kunlari: bugun (va ehtimol kecha, agar uning tungi slotlari qolgan bo'lsa) … ufq. */
@@ -69,12 +76,16 @@ export class AvailabilityService {
     if (!schedule || !plan) return [];
     const slots = slotsOf(schedule, date, timeZone);
     if (slots.length === 0) return [];
-    const occ =
-      (
-        await this.occupancy.load([pitchId], slots[0]?.start as Date, slots.at(-1)?.end as Date)
-      ).get(pitchId) ?? EMPTY_OCCUPANCY;
+    const from = slots[0]?.start as Date;
+    const to = slots.at(-1)?.end as Date;
+    const [occupancy, discounts] = await Promise.all([
+      this.occupancy.load([pitchId], from, to),
+      this.discounts.load([pitchId], from, to),
+    ]);
+    const occ = occupancy.get(pitchId) ?? EMPTY_OCCUPANCY;
+    const disc = discounts.get(pitchId) ?? NO_DISCOUNTS;
     const earliest = this.earliestStart(policy);
-    return slots.map((slot) => this.view(slot, plan, occ, earliest));
+    return slots.map((slot) => this.view(slot, plan, occ, disc, earliest));
   }
 
   /**
@@ -116,16 +127,24 @@ export class AvailabilityService {
       return { ok: false, error: 'BEYOND_HORIZON' };
 
     const range = TimeRange.of(wanted[0]?.start as Date, wanted.at(-1)?.end as Date);
-    const occ =
-      (await this.occupancy.load([params.pitchId], range.start, range.end)).get(params.pitchId) ??
-      EMPTY_OCCUPANCY;
+    const [occupancy, discounts] = await Promise.all([
+      this.occupancy.load([params.pitchId], range.start, range.end),
+      this.discounts.load([params.pitchId], range.start, range.end),
+    ]);
+    const occ = occupancy.get(params.pitchId) ?? EMPTY_OCCUPANCY;
     if (wanted.some((s) => occ.booked.has(s.start.getTime())))
       return { ok: false, error: 'BOOKED' };
 
-    const breakdown = wanted.map((s) => ({
-      start: s.start,
-      price: plan.priceAt(s.businessDate, s.hour),
-    }));
+    // SP-5: chegirma ham narx snapshot'iga kiradi
+    const disc = discounts.get(params.pitchId) ?? NO_DISCOUNTS;
+    const breakdown = wanted.map((s) => {
+      const discountPercent = disc.get(s.start.getTime()) ?? 0;
+      return {
+        start: s.start,
+        price: plan.priceAt(s.businessDate, s.hour).applyDiscountPercent(discountPercent),
+        discountPercent,
+      };
+    });
     return {
       ok: true,
       quote: {
@@ -164,7 +183,13 @@ export class AvailabilityService {
     return result;
   }
 
-  private view(slot: Slot, plan: PricingPlan, occ: PitchOccupancy, earliest: Date): SlotView {
+  private view(
+    slot: Slot,
+    plan: PricingPlan,
+    occ: PitchOccupancy,
+    disc: PitchDiscounts,
+    earliest: Date,
+  ): SlotView {
     const key = slot.start.getTime();
     const pendingRequests = occ.requested.get(key) ?? 0;
     const status: SlotStatus =
@@ -175,7 +200,14 @@ export class AvailabilityService {
           : pendingRequests > 0
             ? 'REQUESTED'
             : 'FREE';
-    return { ...slot, status, pendingRequests, price: plan.priceAt(slot.businessDate, slot.hour) };
+    const discountPercent = disc.get(key) ?? 0;
+    return {
+      ...slot,
+      status,
+      pendingRequests,
+      price: plan.priceAt(slot.businessDate, slot.hour).applyDiscountPercent(discountPercent),
+      discountPercent,
+    };
   }
 
   /** TZ SP-7, EC-S8: boshlangan slot va lead time ichidagi slot bandlanmaydi. */

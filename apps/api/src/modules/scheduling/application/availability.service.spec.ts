@@ -8,6 +8,7 @@ import {
   PricingPlanRepository,
 } from '../domain/pitch-schedule.js';
 import { AvailabilityService } from './availability.service.js';
+import { DiscountRegistry } from './discounts.js';
 import { OccupancyRegistry } from './occupancy.js';
 
 class Schedules extends PitchScheduleRepository {
@@ -54,11 +55,13 @@ const occupancyOf = (booked: string[], requested: [string, number][] = []) => ({
 describe('AvailabilityService (SP-8, EC-S1, EC-S5, EC-S8, EC-S9, EC-S12)', () => {
   let clock: FixedClock;
   let occupancy: OccupancyRegistry;
+  let discounts: DiscountRegistry;
   let service: AvailabilityService;
 
   beforeEach(() => {
     clock = new FixedClock(at('2026-11-12T12:40:00Z')); // Toshkent 17:40
     occupancy = new OccupancyRegistry();
+    discounts = new DiscountRegistry();
     const now = clock.now();
     const plan = PricingPlan.create('p1', Money.of(100_000), now);
     plan.addRule(
@@ -70,6 +73,7 @@ describe('AvailabilityService (SP-8, EC-S1, EC-S5, EC-S8, EC-S9, EC-S12)', () =>
       new Plans([plan]),
       occupancy,
       clock,
+      discounts,
     );
   });
 
@@ -101,6 +105,21 @@ describe('AvailabilityService (SP-8, EC-S1, EC-S5, EC-S8, EC-S9, EC-S12)', () =>
     const q = await quote('2026-11-12T12:00:00Z', 2); // 17:00–19:00
     expect(q.ok && q.quote.total.amount).toBe(250_000);
     expect(q.ok && q.quote.breakdown.map((b) => b.price.amount)).toEqual([100_000, 150_000]);
+  });
+
+  it('4.9 / SP-5: a promotion discount is applied per slot to the quote and the day view', async () => {
+    clock.set(at('2026-11-12T05:00:00Z')); // 10:00
+    discounts.use({
+      load: async () => new Map([['p1', new Map([[at('2026-11-12T13:00:00Z').getTime(), 20]])]]),
+    });
+    const q = await quote('2026-11-12T12:00:00Z', 2); // 17:00 (100k) + 18:00 (150k −20%)
+    expect(q.ok && q.quote.breakdown.map((b) => [b.price.amount, b.discountPercent])).toEqual([
+      [100_000, 0],
+      [120_000, 20],
+    ]);
+    expect(q.ok && q.quote.total.amount).toBe(220_000);
+    const view = await service.dayView('p1', '2026-11-12', TZ);
+    expect(view.find((s) => s.hour === 18)).toMatchObject({ discountPercent: 20 });
   });
 
   it('EC-S1: an overnight start belongs to the previous business day', async () => {

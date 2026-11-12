@@ -7,6 +7,11 @@ export {
   type SlotView,
 } from './application/availability.service.js';
 export {
+  DiscountRegistry,
+  type DiscountSource,
+  type PitchDiscounts,
+} from './application/discounts.js';
+export {
   EMPTY_OCCUPANCY,
   OccupancyRegistry,
   type OccupancySource,
