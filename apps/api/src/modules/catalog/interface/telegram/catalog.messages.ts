@@ -42,6 +42,9 @@ export const catalogMessages = defineMessages(
 
     // --- Admin qarori natijasi ---
     venueApproved: (name: string) => `🎉 «${name}» tasdiqlandi va endi qidiruvda ko'rinadi!`,
+    premiumEnding: (name: string, days: number, until: string) =>
+      `⏳ «${name}»: PREMIUM ${days === 1 ? 'ertaga' : `${days} kundan keyin`} tugaydi (${until}).\n\n` +
+      "Uzaytirish uchun admin bilan bog'laning. Tugagach ma'lumotlar o'chmaydi — faqat FREE limitlari amal qiladi.",
     founderTrial: (until: string) =>
       `🎁 Siz — «Asoschi hamkor»! PREMIUM tarif ${until} gacha bepul: 15 ta rasm, qidiruvda «⭐ Tavsiya etiladi», chegirma e'lonlari.`,
     venueRejected: (name: string, reason: string | null) =>
@@ -85,6 +88,9 @@ export const catalogMessages = defineMessages(
     cityRequired: 'Сначала выберите город в настройках: ⚙️ Настройки → 🏙 Город.',
 
     venueApproved: (name) => `🎉 «${name}» одобрен и теперь виден в поиске!`,
+    premiumEnding: (name, days, until) =>
+      `⏳ «${name}»: PREMIUM заканчивается ${days === 1 ? 'завтра' : `через ${days} дней`} (${until}).\n\n` +
+      'Для продления свяжитесь с админом. Данные не удалятся — будут действовать лимиты FREE.',
     founderTrial: (until) =>
       `🎁 Вы — «Партнёр-основатель»! PREMIUM бесплатно до ${until}: 15 фото, «⭐ Рекомендуем» в поиске, объявления о скидках.`,
     venueRejected: (name, reason) =>

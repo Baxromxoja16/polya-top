@@ -58,6 +58,14 @@ export class MongoSubscriptionStore extends SubscriptionStore {
     );
   }
 
+  async findEndingBetween(from: Date, to: Date): Promise<Subscription[]> {
+    const docs = await this.model
+      .find({ 'history.endsAt': { $gte: from, $lte: to } }, { _id: 1 })
+      .lean<{ _id: Types.ObjectId }[]>()
+      .exec();
+    return this.findMany(docs.map((d) => d._id.toHexString()));
+  }
+
   async save(subscription: Subscription): Promise<void> {
     await saveVersioned(
       this.model,

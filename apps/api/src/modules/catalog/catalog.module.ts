@@ -27,6 +27,7 @@ import {
   FavoriteSchema,
   MongoFavoritesRepository,
 } from './infrastructure/mongo-favorites.repository.js';
+import { PremiumReminder } from './interface/premium-reminder.js';
 import { OwnerOnboardingBotFeature } from './interface/telegram/owner-onboarding.bot.js';
 import { OwnerScheduleBotFeature } from './interface/telegram/owner-schedule.bot.js';
 import { OwnerVenueBotFeature } from './interface/telegram/owner-venue.bot.js';
@@ -65,7 +66,8 @@ import {
     PlayerSearchBotFeature,
     PlayerAvailabilityBotFeature,
     VenueDeepLinkBotFeature,
+    PremiumReminder,
   ],
-  exports: [CatalogQueries, VenueRatingUpdater],
+  exports: [CatalogQueries, VenueRatingUpdater, PremiumReminder],
 })
 export class CatalogModule {}

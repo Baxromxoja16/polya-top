@@ -38,6 +38,18 @@ export class FeatureGate {
     return (await this.store.find(venueId))?.premiumEndsAt(this.clock.now()) ?? null;
   }
 
+  /** TZ 4.9: muddati `withinMs` ichida tugaydigan PREMIUM'lar (eslatma uchun) */
+  async endingWithin(withinMs: number): Promise<{ venueId: string; endsAt: Date }[]> {
+    const now = this.clock.now();
+    const subs = await this.store.findEndingBetween(now, new Date(now.getTime() + withinMs));
+    return subs.flatMap((s) => {
+      const endsAt = s.premiumEndsAt(now);
+      return endsAt && endsAt.getTime() - now.getTime() <= withinMs
+        ? [{ venueId: s.venueId, endsAt }]
+        : [];
+    });
+  }
+
   /** Q16: stadion tasdiqlanganda — "Asoschi hamkor" 3 oylik PREMIUM (bir marta) */
   async startFounderTrial(venueId: string): Promise<boolean> {
     return this.mutate(venueId, (s, now) => s.startFounderTrial(FOUNDER_TRIAL_DAYS, now));

@@ -90,5 +90,7 @@ export class Subscription extends AggregateRoot<string> {
 export abstract class SubscriptionStore {
   abstract find(venueId: string): Promise<Subscription | null>;
   abstract findMany(venueIds: readonly string[]): Promise<Subscription[]>;
+  /** Biror PREMIUM davri `[from, to]` oralig'ida tugaydiganlar */
+  abstract findEndingBetween(from: Date, to: Date): Promise<Subscription[]>;
   abstract save(subscription: Subscription): Promise<void>;
 }
