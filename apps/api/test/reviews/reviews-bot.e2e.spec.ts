@@ -158,7 +158,7 @@ describe('Reviews via bot (e2e): TZ RV-1…RV-6, AD-3, 4.6', () => {
   it('RV-6 + AD-3: reports hide the review; the admin restores it', async () => {
     const review = await db.collection('reviews').findOne();
     for (const id of [8_200_010, 8_200_011, 8_200_012]) {
-      const u = new TelegramUserSim(player['bot'], calls, id);
+      const u = new TelegramUserSim(player.bot, calls, id);
       await u.send('/start');
       await u.press(`rv:rep:${review?._id}`);
     }
@@ -170,5 +170,22 @@ describe('Reviews via bot (e2e): TZ RV-1…RV-6, AD-3, 4.6', () => {
     await admin.press(`rv:mod:${review?._id}:SHOW`);
     expect((await db.collection('reviews').findOne())?.status).toBe('VISIBLE');
     expect((await db.collection('venues').findOne())?.ratingCount).toBe(1);
+  });
+
+  it('RV-8: a player who played today posts a pitch condition; it shows in the reviews header', async () => {
+    await player.press(`rv:cond:${venueId}`);
+    expect(texts(await player.send("maysa ho'l"))).toEqual([
+      "✅ Rahmat! 48 soat davomida ko'rinadi.",
+    ]);
+    const list = await player.press(`rv:list:${venueId}:0`);
+    expect(texts(list)[0]).toContain("🌦 So'nggi holat (");
+    expect(texts(list)[0]).toContain("maysa ho'l");
+  });
+
+  it('RV-8: someone who did not play here cannot post a condition', async () => {
+    const stranger = new TelegramUserSim(player.bot, calls, 8_200_020);
+    await stranger.send('/start');
+    const out = await stranger.press(`rv:cond:${venueId}`);
+    expect(texts(out)[0]).toContain("Holatni faqat so'nggi 24 soatda");
   });
 });

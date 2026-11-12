@@ -15,12 +15,14 @@ import { TelegramMessenger } from '../../../../platform/telegram/telegram-messen
 import { showMessage } from '../../../../platform/telegram/ui.js';
 import { CatalogQueries } from '../../../catalog/index.js';
 import { IdentityQueries } from '../../../identity/index.js';
+import { ConditionService } from '../../application/condition.service.js';
 import { type ReviewActor, ReviewService } from '../../application/review.service.js';
 import type { Review } from '../../domain/review.js';
 
 const ID = '([0-9a-f]{24})';
 const AWAIT_TEXT = 'reviews.text';
 const AWAIT_REPLY = 'reviews.reply';
+const AWAIT_CONDITION = 'reviews.condition';
 const PAGE = 5;
 
 export const reviewMessages = defineMessages(
@@ -38,6 +40,15 @@ export const reviewMessages = defineMessages(
     ownerReply: 'Egasi',
     btnMore: '➡️ Yana',
     reported: '⚠️ Shikoyat qabul qilindi. Rahmat!',
+    condition: (text: string, ago: string, owner: boolean) =>
+      `🌦 So'nggi holat (${ago}${owner ? ', egasidan' : ''}): ${text}`,
+    btnCondition: '🌦 Holat yozish',
+    askCondition:
+      "Maydon holatini qisqa yozing (masalan: «maysa ho'l», «chiroq yarim ishlayapti»):",
+    conditionSaved: "✅ Rahmat! 48 soat davomida ko'rinadi.",
+    conditionDenied: "Holatni faqat so'nggi 24 soatda shu yerda o'ynaganlar yoki egasi yoza oladi.",
+    conditionInvalid: '3–200 belgi, telefon/havolasiz yozing:',
+    hoursAgo: (h: number) => (h < 1 ? 'hozirgina' : `${h} soat oldin`),
   },
   {
     invite: (venue) => `⭐ Как прошла игра в «${venue}»? Оцените:`,
@@ -53,6 +64,15 @@ export const reviewMessages = defineMessages(
     ownerReply: 'Владелец',
     btnMore: '➡️ Ещё',
     reported: '⚠️ Жалоба принята. Спасибо!',
+    condition: (text, ago, owner) =>
+      `🌦 Последнее состояние (${ago}${owner ? ', от владельца' : ''}): ${text}`,
+    btnCondition: '🌦 Сообщить о состоянии',
+    askCondition:
+      'Коротко опишите состояние поля (например: «газон мокрый», «свет работает наполовину»):',
+    conditionSaved: '✅ Спасибо! Будет видно 48 часов.',
+    conditionDenied: 'Сообщать о состоянии могут игравшие здесь за последние 24 часа или владелец.',
+    conditionInvalid: 'Напишите 3–200 символов, без телефона/ссылок:',
+    hoursAgo: (h) => (h < 1 ? 'только что' : `${h} ч назад`),
   },
 );
 
@@ -73,6 +93,7 @@ export class ReviewsBotFeature implements BotFeature {
     private readonly catalog: CatalogQueries,
     private readonly identity: IdentityQueries,
     private readonly messenger: TelegramMessenger,
+    private readonly conditions: ConditionService,
   ) {}
 
   register(bot: Composer<BotContext>): void {
@@ -121,6 +142,18 @@ export class ReviewsBotFeature implements BotFeature {
       await this.list(ctx, ctx.match[1] as string, Number(ctx.match[2]));
     });
 
+    bot.callbackQuery(new RegExp(`^rv:cond:${ID}$`), async (ctx) => {
+      await ctx.answerCallbackQuery();
+      const m = reviewMessages[ctx.lang];
+      if (!(await this.conditions.canReport(ctx.currentUser?.id ?? '', ctx.match[1] as string))) {
+        return void (await ctx.reply(m.conditionDenied));
+      }
+      ctx.session.awaiting = { kind: AWAIT_CONDITION, data: { venueId: ctx.match[1] } };
+      await ctx.reply(m.askCondition, {
+        reply_markup: new Keyboard().text(coreMessages[ctx.lang].cancel).resized().oneTime(),
+      });
+    });
+
     bot.callbackQuery(new RegExp(`^rv:rep:${ID}$`), async (ctx) => {
       await this.reviews.report(actorOf(ctx), ctx.match[1] as string);
       await ctx.answerCallbackQuery({ text: reviewMessages[ctx.lang].reported });
@@ -145,6 +178,17 @@ export class ReviewsBotFeature implements BotFeature {
         });
         const m = reviewMessages[ctx.lang];
         return void (await sendMainMenu(ctx, r.ok && !r.value.isVisible ? m.savedHidden : m.saved));
+      }
+      if (step.kind === AWAIT_CONDITION) {
+        const m = reviewMessages[ctx.lang];
+        const r = await this.conditions.report(
+          ctx.currentUser?.id ?? '',
+          step.data?.venueId as string,
+          ctx.message.text,
+        );
+        if (!r.ok && r.error === 'INVALID_TEXT') return void (await ctx.reply(m.conditionInvalid));
+        ctx.session.awaiting = undefined;
+        return void (await sendMainMenu(ctx, r.ok ? m.conditionSaved : m.conditionDenied));
       }
       if (step.kind === AWAIT_REPLY) {
         ctx.session.awaiting = undefined;
@@ -195,9 +239,17 @@ export class ReviewsBotFeature implements BotFeature {
     const card = await this.catalog.venueCard(venueId);
     if (!card) return;
     const items = await this.reviews.listForVenue(venueId, PAGE, offset);
-    if (items.length === 0 && offset === 0)
-      return void (await ctx.reply(`${m.listTitle(card.venue.name)}\n\n${m.listEmpty}`));
+    const latest = offset === 0 ? await this.conditions.latest(venueId) : null;
+    const ago = latest ? Math.floor((Date.now() - latest.createdAt.getTime()) / 3_600_000) : 0;
+    const header = latest
+      ? `${m.listTitle(card.venue.name)}\n${m.condition(latest.text, m.hoursAgo(ago), latest.byOwner)}`
+      : m.listTitle(card.venue.name);
     const kb = new InlineKeyboard();
+    // TZ RV-8: holat yozish (ruxsat bosilganda tekshiriladi)
+    if (offset === 0) kb.text(m.btnCondition, `rv:cond:${venueId}`).row();
+    if (items.length === 0 && offset === 0) {
+      return void (await ctx.reply(`${header}\n\n${m.listEmpty}`, { reply_markup: kb }));
+    }
     const lines: string[] = [];
     for (const [i, r] of items.entries()) {
       const author = await this.identity.contactOf(r.authorId);
@@ -214,7 +266,7 @@ export class ReviewsBotFeature implements BotFeature {
       kb.text(`⚠️ ${offset + i + 1}`, `rv:rep:${r.id}`);
     }
     if (items.length === PAGE) kb.row().text(m.btnMore, `rv:list:${venueId}:${offset + PAGE}`);
-    await ctx.reply(`${m.listTitle(card.venue.name)}\n\n${lines.join('\n\n')}`, {
+    await ctx.reply(`${header}\n\n${lines.join('\n\n')}`, {
       reply_markup: kb,
     });
   }

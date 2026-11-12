@@ -26,6 +26,15 @@ export class BookingQueries {
     });
   }
 
+  /** `since` dan keyin tugagan yoki hozir davom etayotgan o'yinlar (RV-8) */
+  playerRecent(playerId: string, since: Date): Promise<Booking[]> {
+    return this.store.listByPlayer(playerId, {
+      endAfter: since,
+      statuses: ['CONFIRMED', 'COMPLETED'],
+      limit: 20,
+    });
+  }
+
   /** Oxirgi o'tgan yoki yakunlangan bandlovlar */
   playerHistory(playerId: string): Promise<Booking[]> {
     return this.store.listByPlayer(playerId, {

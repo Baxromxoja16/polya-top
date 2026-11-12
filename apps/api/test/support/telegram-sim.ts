@@ -76,7 +76,7 @@ export class TelegramUserSim {
   #cursor = 0;
 
   constructor(
-    private readonly bot: Bot<BotContext>,
+    readonly bot: Bot<BotContext>,
     private readonly calls: ApiCall[],
     readonly id: number,
     private readonly profile: { first_name: string; language_code?: string } = {
