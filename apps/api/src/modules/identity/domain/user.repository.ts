@@ -1,5 +1,5 @@
+import type { PhoneNumber } from '@polya/shared-kernel';
 import { DomainError } from '@polya/shared-kernel';
-import type { PhoneNumber } from './phone-number.js';
 import type { TelegramId, User, UserId } from './user.js';
 
 /** Bir xil telegramId bilan ikkinchi foydalanuvchi yaratishga urinish (parallel /start). */

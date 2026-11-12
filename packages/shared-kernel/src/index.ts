@@ -14,6 +14,7 @@ export {
 } from './language.js';
 export { InvalidLocalizedTextError, type LocalizedText, localizedText } from './localized-text.js';
 export { type Currency, InvalidMoneyError, Money } from './money.js';
+export { InvalidPhoneNumberError, PhoneNumber } from './phone-number.js';
 export { type Err, err, type Ok, ok, type Result } from './result.js';
 export { normalizeSearchText, searchTokens, slugify, transliterate } from './text.js';
 export { InvalidTimeRangeError, TimeRange } from './time-range.js';

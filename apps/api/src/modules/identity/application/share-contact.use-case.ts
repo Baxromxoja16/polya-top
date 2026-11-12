@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { Clock, err, ok, type Result } from '@polya/shared-kernel';
-import { InvalidPhoneNumberError, PhoneNumber } from '../domain/phone-number.js';
+import {
+  Clock,
+  err,
+  InvalidPhoneNumberError,
+  ok,
+  PhoneNumber,
+  type Result,
+} from '@polya/shared-kernel';
 import type { TelegramId, User } from '../domain/user.js';
 import { UserRepository } from '../domain/user.repository.js';
 import { UserNotFoundError } from './errors.js';

@@ -1,5 +1,5 @@
+import { PhoneNumber } from '@polya/shared-kernel';
 import { describe, expect, it } from 'vitest';
-import { PhoneNumber } from './phone-number.js';
 import { UserEvents } from './user.events.js';
 import { InvalidDisplayNameError, type TelegramId, User, type UserId } from './user.js';
 

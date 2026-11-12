@@ -1,4 +1,4 @@
-import { DomainError } from '@polya/shared-kernel';
+import { DomainError } from './domain-error.js';
 
 export class InvalidPhoneNumberError extends DomainError {
   readonly code = 'INVALID_PHONE_NUMBER';

@@ -1,9 +1,8 @@
 import { Injectable, type OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { DEFAULT_LANGUAGE, isLanguage } from '@polya/shared-kernel';
+import { DEFAULT_LANGUAGE, isLanguage, PhoneNumber } from '@polya/shared-kernel';
 import { type Model, Types } from 'mongoose';
 import { isDuplicateKeyError, saveVersioned } from '../../../platform/database/versioned-save.js';
-import { PhoneNumber } from '../domain/phone-number.js';
 import { ROLES, type Role, type TelegramId, User, type UserId } from '../domain/user.js';
 import {
   PhoneAlreadyTakenError,

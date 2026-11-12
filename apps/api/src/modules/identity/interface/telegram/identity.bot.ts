@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { isLanguage, LANGUAGES, type Language } from '@polya/shared-kernel';
+import { isLanguage, LANGUAGES, type Language, PhoneNumber } from '@polya/shared-kernel';
 import { type Composer, InlineKeyboard, Keyboard } from 'grammy';
 import type { BotContext } from '../../../../platform/telegram/bot-context.js';
 import {
@@ -19,7 +19,6 @@ import {
   RenameUserUseCase,
   SetBotBlockedUseCase,
 } from '../../application/update-profile.use-cases.js';
-import { PhoneNumber } from '../../domain/phone-number.js';
 import type { User } from '../../domain/user.js';
 import { toCurrentUser } from './identity.context.js';
 import { identityMessages } from './identity.messages.js';

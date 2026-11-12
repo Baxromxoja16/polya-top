@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { PhoneNumber } from '@polya/shared-kernel';
 import { type Composer, InlineKeyboard, Keyboard } from 'grammy';
 import type { BotContext } from '../../../../platform/telegram/bot-context.js';
 import {
@@ -16,7 +17,6 @@ import {
   SubmitOwnerApplicationUseCase,
 } from '../../application/owner-application.use-cases.js';
 import { OwnerApplicationRepository } from '../../domain/owner-application.js';
-import { PhoneNumber } from '../../domain/phone-number.js';
 import type { UserId } from '../../domain/user.js';
 import { adminApplicationText, ownerApplicationMessages } from './owner-application.messages.js';
 import { PhoneGate } from './phone-gate.js';

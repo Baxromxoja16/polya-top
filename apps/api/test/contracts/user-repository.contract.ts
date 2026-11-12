@@ -1,6 +1,5 @@
-import { ConcurrencyConflictError, ObjectIdGenerator } from '@polya/shared-kernel';
+import { ConcurrencyConflictError, ObjectIdGenerator, PhoneNumber } from '@polya/shared-kernel';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { PhoneNumber } from '../../src/modules/identity/domain/phone-number.js';
 import { type TelegramId, User, type UserId } from '../../src/modules/identity/domain/user.js';
 import {
   PhoneAlreadyTakenError,

@@ -1,5 +1,5 @@
+import type { PhoneNumber } from '@polya/shared-kernel';
 import { ConcurrencyConflictError } from '@polya/shared-kernel';
-import type { PhoneNumber } from '../domain/phone-number.js';
 import { type TelegramId, User, type UserId, type UserProps } from '../domain/user.js';
 import {
   PhoneAlreadyTakenError,

@@ -1,3 +1,4 @@
+import type { PhoneNumber } from '@polya/shared-kernel';
 import {
   AggregateRoot,
   type Brand,
@@ -5,7 +6,6 @@ import {
   DomainError,
   type Language,
 } from '@polya/shared-kernel';
-import type { PhoneNumber } from './phone-number.js';
 import { UserEvents } from './user.events.js';
 
 export type UserId = Brand<string, 'UserId'>;
