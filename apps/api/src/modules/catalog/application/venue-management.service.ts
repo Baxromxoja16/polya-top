@@ -85,6 +85,11 @@ export class VenueManagementService {
 
   // --- Owner tahrirlari (TZ VC-2b) ---
 
+  /** TZ 4.9: PREMIUM tugash vaqti (FREE — null) */
+  premiumUntil(venueId: VenueId): Promise<Date | null> {
+    return this.features.premiumEndsAt(venueId);
+  }
+
   /** TZ VC-2e / 4.9: FREE — 5, PREMIUM — 15 ta rasm */
   photoLimit(venueId: VenueId): Promise<number> {
     return this.features.limit(venueId, 'PHOTOS');

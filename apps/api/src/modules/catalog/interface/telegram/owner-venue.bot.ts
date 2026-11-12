@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DomainError, GeoPoint, Money } from '@polya/shared-kernel';
+import { DomainError, GeoPoint, Money, zonedParts } from '@polya/shared-kernel';
 import { type Composer, InlineKeyboard, Keyboard } from 'grammy';
 import type { BotContext } from '../../../../platform/telegram/bot-context.js';
 import {
@@ -204,6 +204,16 @@ export class OwnerVenueBotFeature implements BotFeature {
     });
   }
 
+  /** TZ 4.9: tarif holati */
+  private async planLine(ctx: BotContext, venueId: VenueId, cityId: string): Promise<string> {
+    const m = ownerVenueMessages[ctx.lang];
+    const until = await this.manage.premiumUntil(venueId);
+    if (!until) return m.planFree;
+    const p = zonedParts(until, await this.queries.timeZoneOf(cityId));
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return m.planPremium(`${pad(p.day)}.${pad(p.month)}.${p.year}`);
+  }
+
   private async showVenue(ctx: BotContext, venueId: string, asNew = false): Promise<void> {
     const card = await this.card(ctx, venueId);
     const m = ownerVenueMessages[ctx.lang];
@@ -223,6 +233,7 @@ export class OwnerVenueBotFeature implements BotFeature {
       `🏘 ${m.district}: ${card.districtName?.[ctx.lang] ?? m.notSet}`,
       `📞 ${m.phones}: ${v.phones.map((p) => p.format()).join(', ')}`,
       ...card.pitches.map((p) => pitchLine(ctx, p)),
+      await this.planLine(ctx, v.id, v.cityId),
       '',
       m.completeness(pct),
       ...hints,
@@ -244,6 +255,8 @@ export class OwnerVenueBotFeature implements BotFeature {
       .row()
       .text(m.btnPitches, `cat:pitches:${id}`)
       .row();
+    // TZ 4.9: chegirma e'loni — Marketing ekrani (faqat callback protokoli)
+    if (v.isPublic) kb.text(m.btnPromotion, `mk:p:v:${id}`).row();
     if (v.status === 'ARCHIVED') kb.text(m.btnRestore, `cat:st:restore:${id}`);
     else if (v.status === 'REJECTED')
       kb.text(m.btnResubmit, `cat:st:resubmit:${id}`).text(m.btnArchive, `cat:st:archive:${id}`);

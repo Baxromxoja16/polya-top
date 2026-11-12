@@ -56,6 +56,11 @@ export class PromotionService implements DiscountSource {
     private readonly ids: IdGenerator,
   ) {}
 
+  /** 4.9: tarif bo'yicha oylik limit (FREE — 0) */
+  limit(venueId: string): Promise<number> {
+    return this.features.limit(venueId, 'PROMOTIONS_PER_MONTH');
+  }
+
   /** 4.9: qolgan limit (FREE — 0) */
   async remaining(venueId: string): Promise<number> {
     const limit = await this.features.limit(venueId, 'PROMOTIONS_PER_MONTH');

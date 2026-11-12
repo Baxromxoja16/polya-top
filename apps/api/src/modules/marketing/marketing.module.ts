@@ -27,6 +27,7 @@ import {
 } from './infrastructure/mongo-promotion.store.js';
 import { MarketingDispatcher } from './interface/marketing-dispatcher.js';
 import { MarketingBotFeature } from './interface/telegram/marketing.bot.js';
+import { PromotionBotFeature } from './interface/telegram/promotion.bot.js';
 
 /** Marketing (TZ 4.6.1): "Yangi polya" e'loni, MK-1…MK-7 qoidalari, kampaniya statistikasi. */
 @Module({
@@ -51,6 +52,7 @@ import { MarketingBotFeature } from './interface/telegram/marketing.bot.js';
     PromotionService,
     MarketingDispatcher,
     MarketingBotFeature,
+    PromotionBotFeature,
   ],
   exports: [MarketingService, PromotionService],
 })
