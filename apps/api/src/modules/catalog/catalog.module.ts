@@ -25,6 +25,7 @@ import {
   MongoFavoritesRepository,
 } from './infrastructure/mongo-favorites.repository.js';
 import { OwnerOnboardingBotFeature } from './interface/telegram/owner-onboarding.bot.js';
+import { OwnerScheduleBotFeature } from './interface/telegram/owner-schedule.bot.js';
 import { OwnerVenueBotFeature } from './interface/telegram/owner-venue.bot.js';
 import {
   PlayerSearchBotFeature,
@@ -53,6 +54,7 @@ import {
     CatalogQueries,
     OwnerOnboardingBotFeature,
     OwnerVenueBotFeature,
+    OwnerScheduleBotFeature,
     PlayerSearchBotFeature,
     VenueDeepLinkBotFeature,
   ],

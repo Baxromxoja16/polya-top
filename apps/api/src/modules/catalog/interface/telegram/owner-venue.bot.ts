@@ -286,6 +286,11 @@ export class OwnerVenueBotFeature implements BotFeature {
       .text(m.btnHours, `cat:pe:hours:${pitch.id}`)
       .text(m.btnPrice, `cat:pe:price:${pitch.id}`)
       .row()
+      .text(m.btnWeek, `cat:wk:${pitch.id}`)
+      .text(m.btnExceptions, `cat:ex:${pitch.id}`)
+      .row()
+      .text(m.btnRules, `cat:pr:${pitch.id}`)
+      .row()
       .text(m.btnBack, `cat:pitches:${card.venue.id}`);
     await showMessage(ctx, `${m.pitchTitle(pitch.name)}\n${pitchLine(ctx, pitch)}`, kb);
   }
