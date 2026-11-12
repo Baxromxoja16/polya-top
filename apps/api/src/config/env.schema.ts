@@ -37,6 +37,9 @@ export const envSchema = z
     /** TZ BK-3f, BK-9: muddati o'tgan so'rovlar/tugagan o'yinlar tekshiruvi oralig'i. 0 — o'chiq. */
     BOOKING_SWEEP_SECONDS: z.coerce.number().int().min(0).max(3600).default(60),
 
+    /** TZ 4.6.1: marketing kampaniyalari tekshiruvi oralig'i. 0 — o'chiq. */
+    MARKETING_TICK_SECONDS: z.coerce.number().int().min(0).max(3600).default(60),
+
     /** Platforma adminlari: vergul bilan ajratilgan Telegram ID'lar (TZ 3, 4.7). */
     ADMIN_TELEGRAM_IDS: z
       .string()

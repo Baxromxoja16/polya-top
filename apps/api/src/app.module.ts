@@ -6,6 +6,7 @@ import { BookingModule } from './modules/booking/index.js';
 import { CatalogModule } from './modules/catalog/index.js';
 import { GeographyModule } from './modules/geography/index.js';
 import { IdentityModule } from './modules/identity/index.js';
+import { MarketingModule } from './modules/marketing/index.js';
 import { ReviewsModule } from './modules/reviews/index.js';
 import { SchedulingModule } from './modules/scheduling/index.js';
 import { SubscriptionModule } from './modules/subscription/index.js';
@@ -34,6 +35,7 @@ import { ClockModule } from './platform/time/clock.module.js';
     BookingModule,
     ReviewsModule,
     SubscriptionModule,
+    MarketingModule,
   ],
 })
 export class AppModule {}
