@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { validateEnv } from './config/env.schema.js';
 import { HealthModule } from './health/health.module.js';
+import { GeographyModule } from './modules/geography/index.js';
 import { IdentityModule } from './modules/identity/index.js';
 import { DatabaseModule } from './platform/database/database.module.js';
 import { LoggerModule } from './platform/logging/logger.module.js';
@@ -22,6 +23,7 @@ import { ClockModule } from './platform/time/clock.module.js';
     TelegramModule,
     HealthModule,
     IdentityModule,
+    GeographyModule,
   ],
 })
 export class AppModule {}
