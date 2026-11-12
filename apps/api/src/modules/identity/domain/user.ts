@@ -151,6 +151,20 @@ export class User extends AggregateRoot<UserId> {
     return this.#props.roles.includes(role);
   }
 
+  grantRole(role: Role, now: Date): boolean {
+    if (this.hasRole(role)) return false;
+    this.#props.roles = [...this.#props.roles, role];
+    this.touch(now);
+    return true;
+  }
+
+  revokeRole(role: Role, now: Date): boolean {
+    if (!this.hasRole(role)) return false;
+    this.#props.roles = this.#props.roles.filter((r) => r !== role);
+    this.touch(now);
+    return true;
+  }
+
   /** @returns o'zgarish bo'ldimi (bo'lmasa repository'ga yozish shart emas) */
   syncTelegramProfile(profile: TelegramProfile, now: Date): boolean {
     const next = normalizeProfile(profile);

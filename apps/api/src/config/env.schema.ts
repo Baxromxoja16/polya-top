@@ -30,6 +30,26 @@ export const envSchema = z
       .optional(),
     /** Tashqi HTTPS manzil, masalan https://api.polya.top — webhook shu yerga o'rnatiladi. */
     PUBLIC_URL: z.url({ protocol: /^https$/ }).optional(),
+
+    /** Platforma adminlari: vergul bilan ajratilgan Telegram ID'lar (TZ 3, 4.7). */
+    ADMIN_TELEGRAM_IDS: z
+      .string()
+      .default('')
+      .transform((raw) =>
+        raw
+          .split(',')
+          .map((part) => part.trim())
+          .filter(Boolean),
+      )
+      .pipe(
+        z.array(
+          z
+            .string()
+            .regex(/^[1-9]\d{0,15}$/, 'Must be a Telegram user id')
+            .transform(Number),
+        ),
+      )
+      .transform((ids) => [...new Set(ids)]),
   })
   .superRefine((env, ctx) => {
     if (env.TELEGRAM_MODE !== 'off' && !env.TELEGRAM_BOT_TOKEN) {

@@ -26,6 +26,16 @@ describe('validateEnv', () => {
     expect(() => validateEnv({ ...valid, PORT: '70000' })).toThrow(/PORT/);
   });
 
+  it('parses admin telegram ids', () => {
+    expect(validateEnv(valid).ADMIN_TELEGRAM_IDS).toEqual([]);
+    expect(
+      validateEnv({ ...valid, ADMIN_TELEGRAM_IDS: ' 111, 222,,111 ' }).ADMIN_TELEGRAM_IDS,
+    ).toEqual([111, 222]);
+    expect(() => validateEnv({ ...valid, ADMIN_TELEGRAM_IDS: '111,abc' })).toThrow(
+      /ADMIN_TELEGRAM_IDS/,
+    );
+  });
+
   describe('Telegram', () => {
     const token = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw1';
 

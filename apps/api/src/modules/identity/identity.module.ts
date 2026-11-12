@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import type { Env } from '../../config/env.schema.js';
+import { AdminDirectory, StaticAdminDirectory } from './application/admin-directory.js';
 import { EnsureUserUseCase } from './application/ensure-user.use-case.js';
 import { ShareContactUseCase } from './application/share-contact.use-case.js';
 import {
@@ -19,6 +22,12 @@ import { PhoneGate } from './interface/telegram/phone-gate.js';
   imports: [MongooseModule.forFeature([{ name: USER_MODEL, schema: UserSchema }])],
   providers: [
     { provide: UserRepository, useClass: MongoUserRepository },
+    {
+      provide: AdminDirectory,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService<Env, true>) =>
+        new StaticAdminDirectory(config.get('ADMIN_TELEGRAM_IDS', { infer: true })),
+    },
     EnsureUserUseCase,
     ShareContactUseCase,
     ChangeLanguageUseCase,

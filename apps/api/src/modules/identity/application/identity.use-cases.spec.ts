@@ -2,6 +2,7 @@ import { FixedClock, ObjectIdGenerator } from '@polya/shared-kernel';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { TelegramId } from '../domain/user.js';
 import { InMemoryUserRepository } from '../infrastructure/in-memory-user.repository.js';
+import { StaticAdminDirectory } from './admin-directory.js';
 import { EnsureUserUseCase } from './ensure-user.use-case.js';
 import { ShareContactUseCase } from './share-contact.use-case.js';
 import { RenameUserUseCase, SetBotBlockedUseCase } from './update-profile.use-cases.js';
@@ -17,7 +18,12 @@ describe('Identity use cases', () => {
   beforeEach(() => {
     repo = new InMemoryUserRepository();
     clock = new FixedClock(new Date('2026-11-12T10:00:00Z'));
-    ensure = new EnsureUserUseCase(repo, clock, new ObjectIdGenerator());
+    ensure = new EnsureUserUseCase(
+      repo,
+      clock,
+      new ObjectIdGenerator(),
+      new StaticAdminDirectory([777]),
+    );
     share = new ShareContactUseCase(repo, clock);
   });
 
@@ -140,5 +146,23 @@ describe('Identity use cases', () => {
     });
     const ok = await rename.execute({ telegramId: 20, name: 'Kapitan' });
     expect(ok.ok && ok.value.displayName).toBe('Kapitan');
+  });
+});
+
+describe('EnsureUser: ADMIN role follows ADMIN_TELEGRAM_IDS', () => {
+  it('grants ADMIN to listed ids and revokes it when removed from the list', async () => {
+    const repo = new InMemoryUserRepository();
+    const clock = new FixedClock(new Date('2026-11-12T10:00:00Z'));
+    const ids = new ObjectIdGenerator();
+    const profile = { firstName: 'Admin', lastName: null, username: null };
+
+    const asAdmin = new EnsureUserUseCase(repo, clock, ids, new StaticAdminDirectory([777]));
+    const first = await asAdmin.execute({ telegramId: 777, profile, interacted: true });
+    expect(first.user.roles).toEqual(['PLAYER', 'ADMIN']);
+
+    const removed = new EnsureUserUseCase(repo, clock, ids, new StaticAdminDirectory([]));
+    const second = await removed.execute({ telegramId: 777, profile, interacted: true });
+    expect(second.user.roles).toEqual(['PLAYER']);
+    expect((await repo.findByTelegramId(777 as TelegramId))?.roles).toEqual(['PLAYER']);
   });
 });

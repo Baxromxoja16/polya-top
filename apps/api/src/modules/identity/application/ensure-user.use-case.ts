@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Clock, IdGenerator, languageFromLocale } from '@polya/shared-kernel';
 import { type TelegramId, type TelegramProfile, User, type UserId } from '../domain/user.js';
 import { UserAlreadyExistsError, UserRepository } from '../domain/user.repository.js';
+import { AdminDirectory } from './admin-directory.js';
 
 export interface EnsureUserInput {
   telegramId: number;
@@ -31,6 +32,7 @@ export class EnsureUserUseCase {
     private readonly users: UserRepository,
     private readonly clock: Clock,
     private readonly ids: IdGenerator,
+    private readonly admins: AdminDirectory,
   ) {}
 
   async execute(input: EnsureUserInput): Promise<EnsureUserOutput> {
@@ -45,6 +47,7 @@ export class EnsureUserUseCase {
       language: languageFromLocale(input.locale),
       now: this.clock.now(),
     });
+    this.syncAdminRole(user);
     try {
       await this.users.save(user);
       return { user, isNew: true };
@@ -60,7 +63,16 @@ export class EnsureUserUseCase {
     const now = this.clock.now();
     const profileChanged = user.syncTelegramProfile(input.profile, now);
     const unblocked = input.interacted && user.markBotUnblocked(now);
-    if (profileChanged || unblocked) await this.users.save(user);
+    const rolesChanged = this.syncAdminRole(user);
+    if (profileChanged || unblocked || rolesChanged) await this.users.save(user);
     return user;
+  }
+
+  /** ADMIN roli env bilan sinxron: ro'yxatdan chiqarilgan odam keyingi update'dayoq huquqni yo'qotadi. */
+  private syncAdminRole(user: User): boolean {
+    const now = this.clock.now();
+    return this.admins.isAdmin(user.telegramId)
+      ? user.grantRole('ADMIN', now)
+      : user.revokeRole('ADMIN', now);
   }
 }
