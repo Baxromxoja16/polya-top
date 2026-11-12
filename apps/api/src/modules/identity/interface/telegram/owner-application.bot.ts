@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PhoneNumber } from '@polya/shared-kernel';
 import { type Composer, InlineKeyboard, Keyboard } from 'grammy';
 import type { BotContext } from '../../../../platform/telegram/bot-context.js';
@@ -11,6 +11,7 @@ import { sendMainMenu } from '../../../../platform/telegram/core.features.js';
 import { coreMessages } from '../../../../platform/telegram/core.messages.js';
 import { hasRole, isAdmin } from '../../../../platform/telegram/guards.js';
 import { isMainMenuLabel, menuLabels } from '../../../../platform/telegram/main-menu.js';
+import { TelegramMessenger } from '../../../../platform/telegram/telegram-messenger.js';
 import { AdminDirectory } from '../../application/admin-directory.js';
 import {
   ReviewOwnerApplicationUseCase,
@@ -31,14 +32,13 @@ const AFTER_PHONE = 'identity.owner.apply';
 @Injectable()
 @TelegramFeature(FeatureOrder.MODULE)
 export class OwnerApplicationBotFeature implements BotFeature {
-  readonly #logger = new Logger(OwnerApplicationBotFeature.name);
-
   constructor(
     private readonly submit: SubmitOwnerApplicationUseCase,
     private readonly review: ReviewOwnerApplicationUseCase,
     private readonly applications: OwnerApplicationRepository,
     private readonly admins: AdminDirectory,
     private readonly phoneGate: PhoneGate,
+    private readonly messenger: TelegramMessenger,
   ) {
     phoneGate.onVerified(AFTER_PHONE, (ctx) => this.askNote(ctx));
   }
@@ -97,8 +97,7 @@ export class OwnerApplicationBotFeature implements BotFeature {
 
       const { applicant, application } = result.value;
       const m = ownerApplicationMessages[applicant.language];
-      await this.safeSend(
-        ctx,
+      await this.messenger.send(
         applicant.telegramId,
         decision === 'APPROVE' ? m.approved : m.rejected(application.rejectReason),
       );
@@ -123,22 +122,6 @@ export class OwnerApplicationBotFeature implements BotFeature {
     const keyboard = new InlineKeyboard()
       .text('✅ Tasdiqlash', `own:ok:${applicationId}`)
       .text('❌ Rad etish', `own:no:${applicationId}`);
-    for (const adminId of this.admins.telegramIds()) {
-      await this.safeSend(ctx, adminId, text, keyboard);
-    }
-  }
-
-  /** Bitta qabul qiluvchi botni bloklagan bo'lsa, boshqalarga yuborish to'xtamaydi (TZ EC-T1). */
-  private async safeSend(
-    ctx: BotContext,
-    chatId: number,
-    text: string,
-    keyboard?: InlineKeyboard,
-  ): Promise<void> {
-    try {
-      await ctx.api.sendMessage(chatId, text, keyboard ? { reply_markup: keyboard } : {});
-    } catch (error) {
-      this.#logger.warn({ err: error, chatId }, 'Failed to deliver message');
-    }
+    await this.messenger.sendToMany(this.admins.telegramIds(), text, keyboard);
   }
 }
