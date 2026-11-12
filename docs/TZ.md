@@ -792,6 +792,7 @@ Har bosqich oxirida: kod + testlar → siz tekshirasiz → tasdiqlaysiz → keyi
 | 4 — Booking (core) | ✅ | So'rovlar navbati, kontakt almashinuvi, tasdiqlash/rad etish, slot-lock'lar (50 parallel → 1 g'olib), qo'lda bandlov, blok, bekor qilish, NO_SHOW, muddat/yakunlash fon jarayoni, "Mening bandlovlarim", "Yana bandlash" |
 | 5 — Notifications + Jobs | ✅ | BullMQ yetkazish navbati (rate limit, 429, 403 → bloklangan), eslatma 2 soat oldin, Owner'ga eslatma 10 daqiqa oldin, kunlik jadval 21:00 — ADR-0006 |
 | 6 — Reviews + Reputation | ✅ | Bandlovdan keyin baholash (1–5, izoh, 7 kun tahrir), Owner javobi, shikoyat + avto-moderatsiya, stadion reytingi kartochkada, o'yinchi ishonchliligi (NO_SHOW/bekor qilish), maydon holati xabarlari (RV-8, 24 soat) |
+| 6a — Marketing + Subscription | ✅ | `Subscription` konteksti + `FeatureGate` (FREE/PREMIUM jadvali), "Asoschi hamkor" 90 kun, `/premium` (qo'lda uzaytirish), muddat tugashidan 7/1 kun oldin eslatma; "Yangi polya" kampaniyasi (birlashtirish, 10:00–21:00, haftasiga 2 ta, 🔕 opt-out, statistika, bloklash > 2% — admin'ga); chegirma e'loni (PREMIUM, oyiga 4 ta, 10–50%, 24 soat, narx snapshot'iga kiradi); "⭐ Tavsiya etiladi" (sahifada ≤ 2); `SlotWatch` (navbat bilan, 10 daqiqa oraliq); PREMIUM rasm limiti 15 |
 
 ### TZ'dan chetlanishlar (asoslangan)
 | Joy | TZ | Amalda | Sabab |
@@ -799,7 +800,6 @@ Har bosqich oxirida: kod + testlar → siz tekshirasiz → tasdiqlaysiz → keyi
 | EC-O1 | Qoralama DB'da, 30 kun | Qoralama Redis sessiyasida, 7 kun (sessiya TTL) | Yarim to'ldirilgan stadion bazada "axlat" bo'lib qolmaydi; 4 ta maydon uchun yetarli |
 | EC-O6 | Topilmagan so'rovlar Admin uchun yig'iladi | Strukturali log (`search.miss`) | Admin paneli (7-bosqich) shu log'dan hisobot oladi |
 | 4.2 | Admin boshqaruvi bot orqali | Bot buyruqlari (`/admin`, `/cities`, `/addcity`, `/pending` ...) | Adminlar ichki xodim; to'liq web panel — v2 |
-| VC-5d | "Bo'shasa xabar ber" | 6a-bosqichda (marketing/xabarnomalar bilan) | Navbatli xabarnoma talab qilinadi |
 | 7.6, 4.6 | Delayed job'lar + Transactional Outbox | BullMQ — faqat yetkazish uchun; vaqt triggerlari holatdan (davriy tekshiruv + atomik flag) — ADR-0006 | Hamma triggerlar bandlov holatidan aniqlanadi; Outbox'siz ham "ko'pi bilan bir marta" kafolati |
 | 4.6 | Kunlik jadvalni Owner o'chira oladi | Hozircha hammaga yuboriladi | Sozlama 7-bosqichda |
 | 3 (Staff) | Staff roli | Hozircha faqat Owner/Admin | Xodim taklif qilish oqimi 7-bosqichda (hardening) |
@@ -808,4 +808,10 @@ Har bosqich oxirida: kod + testlar → siz tekshirasiz → tasdiqlaysiz → keyi
 | SP-6, SP-7 | Stadion darajasida sozlanadi | Hozircha platforma standarti (14 kun, 30 daqiqa, maks. 4 soat) — `BookingPolicy` | Owner sozlamalari 4-bosqichda bandlov sozlamalari bilan birga |
 | RV-2 | Mezonlar (yoritish, kiyinish xonasi...) va rasm | Faqat umumiy baho + matn | MVP uchun yetarli; mezonlar keyingi iteratsiyada |
 | RV-8 | Holat xabari kartochkada | "Sharhlar" ro'yxati sarlavhasida | Kartochka qisqa qoladi; xabar 24 soat yashaydi |
+| 7.2 (Search) | `SlotWatch` Search kontekstida | Booking kontekstida | Bo'shaganlik va EC-M7 (boshqa joyda bandlov) — bandlov holati; Booking'da tranzaksiyasiz va aylanma bog'liqliksiz |
+| MK-2 | "Haftasiga 2 ta" | Sirpanuvchi 7 kun | Kalendar haftasi chegarasida 4 ta xabar ketib qolmaydi |
+| 4.9 | Chegirma limiti "oyiga" | Sirpanuvchi 30 kun | Oy boshida limitlar "portlab" ketmaydi |
+| 4.9 | Chegirma e'lonidagi "Bandlash" tugmasi | Stadion kartochkasini ochadi (bosish hisoblanadi, MK-7) | Kartochkada chegirmali narx va bo'sh vaqtlar to'ri bor; band bo'lsa — bandlash oqimi "band" deydi |
+| EC-M5 | FREE'da faqat birinchi 5 ta rasm ko'rsatiladi | O'yinchiga hozircha faqat birinchi rasm ko'rsatiladi | Galereya v2; rasmlar o'chirilmaydi |
+| 4.9 | Staff limiti (FREE — 1 ta) | `FeatureGate`da tayyor (`STAFF`) | Staff taklif qilish oqimi — 7-bosqich |
 | 5.2 | Sana → vaqt → lokatsiya → natija | Sana → vaqt → natija (shahar bo'yicha, arzonidan) | Lokatsiya so'rash qadamni uzaytiradi; masofa bo'yicha qidiruv "📍 Yaqin atrofdagi"da bor |
