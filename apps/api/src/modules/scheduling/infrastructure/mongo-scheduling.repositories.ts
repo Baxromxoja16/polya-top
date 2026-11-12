@@ -1,14 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Money } from '@polya/shared-kernel';
+import { type LocalDate, Money } from '@polya/shared-kernel';
 import { type Model, Schema, Types } from 'mongoose';
 import { saveVersioned } from '../../../platform/database/versioned-save.js';
 import { OpeningHours } from '../domain/opening-hours.js';
 import {
+  type DaySelector,
   PitchSchedule,
   PitchScheduleRepository,
   PricingPlan,
   PricingPlanRepository,
+  type PricingRule,
   type Weekday,
 } from '../domain/pitch-schedule.js';
 
@@ -22,9 +24,25 @@ interface DayDoc {
   closeExt: number;
 }
 
+interface ExceptionDoc {
+  date: string;
+  closed: boolean;
+  open?: number;
+  closeExt?: number;
+}
+
+interface RuleDoc {
+  id: string;
+  days: DaySelector;
+  fromHour: number;
+  toHour: number;
+  pricePerHour: number;
+}
+
 interface ScheduleDocument {
   _id: Types.ObjectId;
   weekly: DayDoc[];
+  exceptions: ExceptionDoc[];
   updatedAt: Date;
   version: number;
 }
@@ -33,6 +51,7 @@ interface PricingDocument {
   _id: Types.ObjectId;
   basePerHour: number;
   currency: 'UZS';
+  rules: RuleDoc[];
   updatedAt: Date;
   version: number;
 }
@@ -40,6 +59,12 @@ interface PricingDocument {
 export const ScheduleSchema = new Schema<ScheduleDocument>(
   {
     weekly: [new Schema<DayDoc>({ day: Number, open: Number, closeExt: Number }, { _id: false })],
+    exceptions: [
+      new Schema<ExceptionDoc>(
+        { date: String, closed: Boolean, open: Number, closeExt: Number },
+        { _id: false },
+      ),
+    ],
     updatedAt: { type: Date, required: true },
     version: { type: Number, required: true },
   },
@@ -50,6 +75,7 @@ export const PricingSchema = new Schema<PricingDocument>(
   {
     basePerHour: { type: Number, required: true },
     currency: { type: String, required: true },
+    rules: { type: Schema.Types.Mixed, default: [] },
     updatedAt: { type: Date, required: true },
     version: { type: Number, required: true },
   },
@@ -88,6 +114,11 @@ export class MongoPitchScheduleRepository extends PitchScheduleRepository {
       {
         _id: oid(schedule.pitchId),
         weekly,
+        exceptions: [...schedule.exceptions].map(([date, h]) =>
+          h
+            ? { date, closed: false, open: h.openHour, closeExt: h.closeHourExtended }
+            : { date, closed: true },
+        ),
         updatedAt: schedule.updatedAt,
         version: schedule.version + 1,
       },
@@ -116,6 +147,9 @@ export class MongoPricingPlanRepository extends PricingPlanRepository {
       PricingPlan.reconstitute(
         d._id.toHexString(),
         Money.of(d.basePerHour, d.currency),
+        (d.rules ?? []).map(
+          (r): PricingRule => ({ ...r, pricePerHour: Money.of(r.pricePerHour, d.currency) }),
+        ),
         d.updatedAt,
         d.version,
       ),
@@ -129,6 +163,7 @@ export class MongoPricingPlanRepository extends PricingPlanRepository {
         _id: oid(plan.id),
         basePerHour: plan.basePerHour.amount,
         currency: plan.basePerHour.currency,
+        rules: plan.rules.map((r) => ({ ...r, pricePerHour: r.pricePerHour.amount })),
         updatedAt: plan.updatedAt,
         version: plan.version + 1,
       },
@@ -142,10 +177,21 @@ function toSchedule(doc: ScheduleDocument): PitchSchedule {
   const weekly = new Map<Weekday, OpeningHours | null>();
   for (const day of [1, 2, 3, 4, 5, 6, 7] as Weekday[]) weekly.set(day, null);
   for (const d of doc.weekly) {
-    weekly.set(
-      d.day as Weekday,
-      OpeningHours.of(d.open, d.closeExt > 24 ? d.closeExt - 24 : d.closeExt),
-    );
+    weekly.set(d.day as Weekday, toHours(d.open, d.closeExt));
   }
-  return PitchSchedule.reconstitute(doc._id.toHexString(), weekly, doc.updatedAt, doc.version);
+  const exceptions = new Map<LocalDate, OpeningHours | null>();
+  for (const e of doc.exceptions ?? []) {
+    exceptions.set(e.date, e.closed ? null : toHours(e.open ?? 0, e.closeExt ?? 24));
+  }
+  return PitchSchedule.reconstitute(
+    doc._id.toHexString(),
+    weekly,
+    exceptions,
+    doc.updatedAt,
+    doc.version,
+  );
+}
+
+function toHours(open: number, closeExt: number): OpeningHours {
+  return OpeningHours.of(open, closeExt > 24 ? closeExt - 24 : closeExt);
 }
