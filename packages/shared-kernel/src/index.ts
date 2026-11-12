@@ -18,3 +18,14 @@ export { InvalidPhoneNumberError, PhoneNumber } from './phone-number.js';
 export { type Err, err, type Ok, ok, type Result } from './result.js';
 export { normalizeSearchText, searchTokens, slugify, transliterate } from './text.js';
 export { InvalidTimeRangeError, TimeRange } from './time-range.js';
+export {
+  addDays,
+  daysBetween,
+  InvalidLocalDateError,
+  type LocalDate,
+  parseLocalDate,
+  weekdayOf,
+  type ZonedParts,
+  zonedParts,
+  zonedToUtc,
+} from './zoned-time.js';
