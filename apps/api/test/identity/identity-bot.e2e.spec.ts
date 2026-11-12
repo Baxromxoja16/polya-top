@@ -267,10 +267,33 @@ describe('Identity bot (e2e): TZ ID-1…ID-6', () => {
       ]);
     });
 
-    it('unknown text gets the menu', async () => {
+    it('free text is treated as a search query (no cities yet → explains)', async () => {
       expect(texts(await sim(1001).send('salom'))).toEqual([
-        "Menyudan kerakli bo'limni tanlang 👇",
+        "Hozircha bot ishlaydigan shaharlar qo'shilmagan.",
       ]);
+    });
+
+    it('a sticker (non-text) gets the menu', async () => {
+      const u = sim(1001);
+      // biome-ignore lint/suspicious/noExplicitAny: raw update
+      const out = await u.act({
+        message: {
+          message_id: 1,
+          date: 0,
+          chat: { id: 1001, type: 'private' },
+          from: u.from,
+          sticker: {
+            file_id: 's',
+            file_unique_id: 's',
+            type: 'regular',
+            width: 1,
+            height: 1,
+            is_animated: false,
+            is_video: false,
+          },
+        },
+      } as any);
+      expect(texts(out)).toEqual(["Menyudan kerakli bo'limni tanlang 👇"]);
     });
 
     it('EC-T6: an empty/emoji-only Telegram name gets a fallback', async () => {

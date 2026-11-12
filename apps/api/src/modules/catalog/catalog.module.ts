@@ -19,6 +19,10 @@ import {
 } from './infrastructure/mongo-catalog.repositories.js';
 import { OwnerOnboardingBotFeature } from './interface/telegram/owner-onboarding.bot.js';
 import { OwnerVenueBotFeature } from './interface/telegram/owner-venue.bot.js';
+import {
+  PlayerSearchBotFeature,
+  VenueDeepLinkBotFeature,
+} from './interface/telegram/player-search.bot.js';
 
 /** Venue Catalog (TZ 4.2): stadionlar, maydonlar, qidiruv. */
 @Module({
@@ -39,6 +43,8 @@ import { OwnerVenueBotFeature } from './interface/telegram/owner-venue.bot.js';
     CatalogQueries,
     OwnerOnboardingBotFeature,
     OwnerVenueBotFeature,
+    PlayerSearchBotFeature,
+    VenueDeepLinkBotFeature,
   ],
   exports: [CatalogQueries],
 })
