@@ -130,6 +130,7 @@ describe('Owner onboarding via bot (e2e): TZ VC-1, VC-2, EC-O1…O3', () => {
     );
     const toOwner = out.filter((c) => c.method === 'sendMessage' && c.payload.chat_id === OWNER);
     expect(toOwner[0]?.payload.text).toContain('🎉 «Olmaliq Arena» tasdiqlandi');
+    expect(toOwner[0]?.payload.text).toContain('🎁 Siz — «Asoschi hamkor»! PREMIUM tarif');
     expect((await db.collection('venues').findOne())?.status).toBe('APPROVED');
   });
 
@@ -137,6 +138,26 @@ describe('Owner onboarding via bot (e2e): TZ VC-1, VC-2, EC-O1…O3', () => {
     const out = await admin.press(reviewButtons[1] as string);
     expect(out[0]?.payload.show_alert).toBe(true);
     expect((await db.collection('venues').findOne())?.status).toBe('APPROVED');
+  });
+
+  it('TZ 4.9: /premium shows the plan and extends it from the end of the trial', async () => {
+    const slug = (await db.collection('venues').findOne())?.slug as string;
+    expect(texts(await admin.send('/premium nope'))[0]).toContain('Foydalanish: /premium');
+    expect(texts(await admin.send(`/premium ${slug}`))[0]).toMatch(
+      /⭐ PREMIUM — \d\d\.\d\d\.\d{4} gacha/,
+    );
+    expect(texts(await admin.send(`/premium ${slug} 0`))[0]).toContain('1…366');
+    await admin.send(`/premium ${slug} 30`);
+    const history = (await db.collection('subscriptions').findOne())?.history as { endsAt: Date }[];
+    expect(history.map((p) => p.endsAt.getTime() - (history[0]?.endsAt.getTime() ?? 0))).toEqual([
+      0,
+      30 * 86_400_000,
+    ]);
+  });
+
+  it('a non-admin cannot use /premium', async () => {
+    expect(texts(await owner.send('/premium x 30')).join()).not.toContain('PREMIUM');
+    expect((await db.collection('subscriptions').findOne())?.history).toHaveLength(2);
   });
 
   it('/pending is empty after review', async () => {

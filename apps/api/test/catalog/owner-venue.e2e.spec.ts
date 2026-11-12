@@ -185,4 +185,22 @@ describe('Owner venue management via bot (e2e): TZ VC-2b, VC-2c, EC-O5, EC-D1', 
     await owner.press(`cat:st:restore:${venueId}`);
     expect((await venue())?.status).toBe('APPROVED');
   });
+
+  it('TZ 4.9 / Q16: approval starts the founder trial — PREMIUM allows 15 photos', async () => {
+    const sub = await db.collection('subscriptions').findOne();
+    expect(sub?.history).toMatchObject([{ plan: 'PREMIUM', source: 'FOUNDER_TRIAL' }]);
+    await owner.press(`cat:e:photos:${venueId}`);
+    for (let i = 3; i <= 15; i++) await owner.sendPhoto(`ph-${i}`);
+    expect(texts(await owner.sendPhoto('ph-16'))[0]).toBe('Rasm chegarasiga yetdingiz (15 ta).');
+    expect((await venue())?.photos).toHaveLength(15);
+  });
+
+  it('EC-M4: after PREMIUM ends, nothing is deleted, but the FREE limit (5) applies', async () => {
+    await db
+      .collection('subscriptions')
+      .updateOne({}, { $set: { 'history.0.endsAt': new Date('2020-01-01T00:00:00Z') } });
+    await owner.press(`cat:e:photos:${venueId}`);
+    expect(texts(await owner.sendPhoto('ph-x'))[0]).toBe('Rasm chegarasiga yetdingiz (5 ta).');
+    expect((await venue())?.photos).toHaveLength(15);
+  });
 });
