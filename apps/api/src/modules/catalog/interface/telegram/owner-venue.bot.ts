@@ -255,6 +255,7 @@ export class OwnerVenueBotFeature implements BotFeature {
       .text(m.btnPhones, `cat:e:phones:${id}`)
       .row()
       .text(m.btnPitches, `cat:pitches:${id}`)
+      .text(m.btnStaff, `cat:sf:${id}`)
       .row();
     // TZ 4.9: chegirma e'loni — Marketing ekrani (faqat callback protokoli)
     if (v.isPublic) kb.text(m.btnPromotion, `mk:p:v:${id}`).row();

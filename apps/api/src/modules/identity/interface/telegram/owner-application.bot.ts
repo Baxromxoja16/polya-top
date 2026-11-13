@@ -45,7 +45,8 @@ export class OwnerApplicationBotFeature implements BotFeature {
 
   register(bot: Composer<BotContext>): void {
     bot.hears(menuLabels('owner'), async (ctx, next) => {
-      if (hasRole(ctx, 'OWNER')) return next();
+      // Owner va xodimlar uchun panel Catalog'da (xodim ariza bermaydi)
+      if (hasRole(ctx, 'OWNER') || hasRole(ctx, 'STAFF')) return next();
       const userId = ctx.currentUser?.id as UserId | undefined;
       if (userId && (await this.applications.findPendingByUser(userId))) {
         await ctx.reply(ownerApplicationMessages[ctx.lang].alreadyPending);

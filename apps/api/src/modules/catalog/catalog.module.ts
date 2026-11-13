@@ -8,6 +8,7 @@ import { CatalogQueries } from './application/catalog.queries.js';
 import { FavoritesService } from './application/favorites.service.js';
 import { FreeSearchService } from './application/free-search.service.js';
 import { RegisterVenueUseCase } from './application/register-venue.use-case.js';
+import { StaffInviteStore, StaffService } from './application/staff.service.js';
 import { VenueManagementService } from './application/venue-management.service.js';
 import { VenueRatingUpdater } from './application/venue-rating.updater.js';
 import { FavoritesRepository } from './domain/favorites.js';
@@ -27,6 +28,7 @@ import {
   FavoriteSchema,
   MongoFavoritesRepository,
 } from './infrastructure/mongo-favorites.repository.js';
+import { RedisStaffInviteStore } from './infrastructure/redis-staff-invite.store.js';
 import { PremiumReminder } from './interface/premium-reminder.js';
 import { OwnerOnboardingBotFeature } from './interface/telegram/owner-onboarding.bot.js';
 import { OwnerScheduleBotFeature } from './interface/telegram/owner-schedule.bot.js';
@@ -36,6 +38,7 @@ import {
   PlayerSearchBotFeature,
   VenueDeepLinkBotFeature,
 } from './interface/telegram/player-search.bot.js';
+import { StaffBotFeature } from './interface/telegram/staff.bot.js';
 
 /** Venue Catalog (TZ 4.2): stadionlar, maydonlar, qidiruv. */
 @Module({
@@ -67,6 +70,9 @@ import {
     PlayerAvailabilityBotFeature,
     VenueDeepLinkBotFeature,
     PremiumReminder,
+    { provide: StaffInviteStore, useClass: RedisStaffInviteStore },
+    StaffService,
+    StaffBotFeature,
   ],
   exports: [CatalogQueries, VenueRatingUpdater, PremiumReminder, VenueManagementService],
 })

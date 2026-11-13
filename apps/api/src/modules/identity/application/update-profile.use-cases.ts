@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Clock, err, type Language, ok, PhoneNumber, type Result } from '@polya/shared-kernel';
-import { InvalidDisplayNameError, type TelegramId, type User } from '../domain/user.js';
+import {
+  InvalidDisplayNameError,
+  type TelegramId,
+  type User,
+  type UserId,
+} from '../domain/user.js';
 import { UserRepository } from '../domain/user.repository.js';
 import { AdminDirectory } from './admin-directory.js';
 import { CityCatalog } from './city-catalog.js';
@@ -47,6 +52,20 @@ export class RenameUserUseCase extends UserCommand {
     }
     await this.users.save(user);
     return ok(user);
+  }
+}
+
+/** TZ 3: xodim taklifini qabul qilgan foydalanuvchiga STAFF roli (Catalog chaqiradi) */
+@Injectable()
+export class GrantStaffRoleUseCase {
+  constructor(
+    private readonly users: UserRepository,
+    private readonly clock: Clock,
+  ) {}
+
+  async execute(userId: string): Promise<void> {
+    const user = await this.users.findById(userId as UserId);
+    if (user?.grantRole('STAFF', this.clock.now())) await this.users.save(user);
   }
 }
 
