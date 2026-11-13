@@ -25,6 +25,7 @@ import {
   SetUserBlockedUseCase,
 } from './application/update-profile.use-cases.js';
 import { UserStatistics } from './application/user-statistics.js';
+import { WebSessionUseCase } from './application/web-session.use-case.js';
 import { OwnerApplicationRepository } from './domain/owner-application.js';
 import { UserRepository } from './domain/user.repository.js';
 import { GeographyCityCatalog } from './infrastructure/geography-city-catalog.js';
@@ -37,6 +38,7 @@ import {
 import { MongoUserRepository } from './infrastructure/mongo-user.repository.js';
 import { MongoUserStatistics } from './infrastructure/mongo-user-statistics.js';
 import { USER_MODEL, UserSchema } from './infrastructure/user.schema.js';
+import { AuthController } from './interface/http/auth.controller.js';
 import { IdentityBotFeature } from './interface/telegram/identity.bot.js';
 import { IdentityContextFeature } from './interface/telegram/identity.context.js';
 import { OwnerApplicationBotFeature } from './interface/telegram/owner-application.bot.js';
@@ -52,7 +54,9 @@ import { PhoneGate } from './interface/telegram/phone-gate.js';
     ]),
     GeographyModule,
   ],
+  controllers: [AuthController],
   providers: [
+    WebSessionUseCase,
     { provide: UserRepository, useClass: MongoUserRepository },
     {
       provide: AdminDirectory,
