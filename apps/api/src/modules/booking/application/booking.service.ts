@@ -224,6 +224,53 @@ export class BookingService {
     return ok(booking);
   }
 
+  /**
+   * EC-B10, EC-B11: kelajakdagi faol bandlovlarni tizim nomidan bekor qilish.
+   * @returns bekor qilinganlar (xabarnoma uchun)
+   */
+  async cancelForBlockedPlayer(playerId: string, note: string): Promise<Booking[]> {
+    const now = this.clock.now();
+    const active = await this.store.listByPlayer(playerId, {
+      endAfter: now,
+      statuses: ['PENDING', 'CONFIRMED'],
+      limit: 200,
+    });
+    return this.cancelAll(active, 'PLAYER_BLOCKED', note);
+  }
+
+  async cancelForBlockedVenue(venueId: string, note: string): Promise<Booking[]> {
+    const now = this.clock.now();
+    const active = await this.store.listByVenues([venueId], {
+      from: now,
+      to: new Date(now.getTime() + 400 * 86_400_000),
+      statuses: ['PENDING', 'CONFIRMED'],
+    });
+    return this.cancelAll(active, 'VENUE_BLOCKED', note);
+  }
+
+  private async cancelAll(
+    bookings: Booking[],
+    cause: 'PLAYER_BLOCKED' | 'VENUE_BLOCKED',
+    note: string,
+  ): Promise<Booking[]> {
+    const done: Booking[] = [];
+    for (const b of bookings) {
+      if (b.range.start <= this.clock.now()) continue; // boshlangan o'yinga tegilmaydi
+      const occupied = b.occupiesSlots;
+      try {
+        b.cancelBySystem(cause, note, this.clock.now());
+        if (occupied) await this.store.commitRelease(b);
+        else await this.store.save(b);
+        done.push(b);
+      } catch (error) {
+        if (error instanceof BookingTransitionError || error instanceof ConcurrencyConflictError)
+          continue;
+        throw error;
+      }
+    }
+    return done;
+  }
+
   /** TZ BK-7: qo'lda bandlov — darhol CONFIRMED, kesishgan so'rovlar rad etiladi */
   async createManual(
     actor: BookingActor,

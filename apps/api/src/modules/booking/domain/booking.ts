@@ -309,6 +309,31 @@ export class Booking extends AggregateRoot<BookingId> {
     this.emit(BookingEvents.Cancelled, now);
   }
 
+  /**
+   * EC-B10, EC-B11: Admin o'yinchini/stadionni bloklaganda — tizim bekor qiladi.
+   * O'yinchi bloklansa — "o'yinchi bekor qildi" (reputatsiyaga kech bekor sifatida yozilmaydi),
+   * stadion bloklansa — so'rov rad etiladi, tasdiqlangani "egasi bekor qildi" sabab bilan.
+   */
+  cancelBySystem(cause: 'PLAYER_BLOCKED' | 'VENUE_BLOCKED', note: string, now: Date): void {
+    if (cause === 'PLAYER_BLOCKED') {
+      this.move(['PENDING', 'CONFIRMED'], 'CANCELLED_BY_PLAYER', null, note, now);
+      this.#p.lateCancel = false;
+      this.#p.note = cleanNote(note);
+      this.emit(BookingEvents.Cancelled, now);
+      return;
+    }
+    if (this.#p.status === 'PENDING') {
+      this.move(['PENDING'], 'REJECTED', null, note, now);
+      this.#p.rejectReason = 'OWNER';
+      this.#p.note = cleanNote(note);
+      this.emit(BookingEvents.Rejected, now);
+      return;
+    }
+    this.move(['CONFIRMED'], 'CANCELLED_BY_OWNER', null, note, now);
+    this.#p.note = cleanNote(note);
+    this.emit(BookingEvents.Cancelled, now);
+  }
+
   /** BK-9: o'yin tugagach */
   complete(now: Date): void {
     if (now < this.#p.range.end) throw new BookingTransitionError('Game has not finished yet');

@@ -138,6 +138,29 @@ describe('Booking state machine (TZ 4.4.1)', () => {
   });
 });
 
+describe('System cancellation (EC-B10, EC-B11)', () => {
+  it('a blocked player: pending and confirmed become cancelled by player, never "late"', () => {
+    const b = request('2026-11-12T10:40:00Z');
+    b.confirm('o1', now);
+    b.cancelBySystem('PLAYER_BLOCKED', 'Akkaunt bloklandi', now);
+    expect(b).toMatchObject({
+      status: 'CANCELLED_BY_PLAYER',
+      occupiesSlots: false,
+      lateCancel: false,
+    });
+  });
+
+  it('a blocked venue: a pending request is rejected, a confirmed game is cancelled by owner', () => {
+    const pending = request();
+    pending.cancelBySystem('VENUE_BLOCKED', 'Stadion bloklandi', now);
+    expect(pending.status).toBe('REJECTED');
+    const confirmed = request();
+    confirmed.confirm('o1', now);
+    confirmed.cancelBySystem('VENUE_BLOCKED', 'Stadion bloklandi', now);
+    expect(confirmed).toMatchObject({ status: 'CANCELLED_BY_OWNER', note: 'Stadion bloklandi' });
+  });
+});
+
 describe('Manual booking (BK-7)', () => {
   it('is CONFIRMED immediately with guest details', () => {
     const b = Booking.manual({
