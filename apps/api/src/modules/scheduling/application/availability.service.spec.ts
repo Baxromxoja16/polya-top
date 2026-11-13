@@ -122,6 +122,17 @@ describe('AvailabilityService (SP-8, EC-S1, EC-S5, EC-S8, EC-S9, EC-S12)', () =>
     expect(view.find((s) => s.hour === 18)).toMatchObject({ discountPercent: 20 });
   });
 
+  it('EC-S2: booked slots outside the (changed) schedule are listed, others are not', async () => {
+    clock.set(at('2026-11-12T05:00:00Z')); // 10:00
+    const inside = at('2026-11-12T13:00:00Z').getTime(); // 18:00
+    const outside = at('2026-11-12T22:00:00Z').getTime(); // 03:00 — 08–02 jadvaldan tashqari
+    occupancy.use({
+      load: async () =>
+        new Map([['p1', { booked: new Set([inside, outside]), requested: new Map() }]]),
+    });
+    expect((await service.outsideSchedule('p1', TZ)).map((d) => d.getTime())).toEqual([outside]);
+  });
+
   it('EC-S1: an overnight start belongs to the previous business day', async () => {
     const q = await quote('2026-11-12T20:00:00Z'); // 13-noyabr 01:00
     expect(q.ok && q.quote.businessDate).toBe('2026-11-12');

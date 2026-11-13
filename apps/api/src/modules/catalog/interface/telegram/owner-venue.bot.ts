@@ -31,6 +31,7 @@ import { AMENITIES, type Amenity, type VenueId } from '../../domain/venue.js';
 import { formatSum } from './catalog.messages.js';
 import { statusLabel } from './owner-onboarding.bot.js';
 import { ownerVenueMessages } from './owner-venue.messages.js';
+import { warnScheduleConflicts } from './schedule-conflicts.view.js';
 import { actorOf } from './telegram-actor.js';
 import { AMENITY_LABELS, SURFACE_LABELS } from './venue-labels.js';
 
@@ -449,6 +450,8 @@ export class OwnerVenueBotFeature implements BotFeature {
     await sendMainMenu(ctx, m.saved);
     if (pitchId) await this.showPitch(ctx, pitchId);
     else await this.showVenue(ctx, venueId as string, true);
+    // EC-S2: maydon ish vaqti o'zgardi
+    if (pitchId && data.field === 'hours') await warnScheduleConflicts(ctx, this.manage, pitchId);
   }
 
   private async pitchEdit(

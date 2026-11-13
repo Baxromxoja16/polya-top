@@ -10,6 +10,7 @@ import {
 } from '@polya/shared-kernel';
 import { type CityId, GeographyQueries } from '../../geography/index.js';
 import {
+  AvailabilityService,
   type DaySelector,
   type OpeningHours,
   type PitchScheduleDetails,
@@ -63,6 +64,7 @@ export class VenueManagementService {
     private readonly ids: IdGenerator,
     private readonly geography: GeographyQueries,
     private readonly features: FeatureGate,
+    private readonly availability: AvailabilityService,
   ) {}
 
   // --- Admin ko'rigi (TZ VC-1, AD-1) ---
@@ -261,6 +263,20 @@ export class VenueManagementService {
   async removePriceRule(actor: Actor, pitchId: PitchId, ruleId: string): Promise<void> {
     await this.loadPitch(actor, pitchId);
     await this.scheduling.removePriceRule(pitchId, ruleId);
+  }
+
+  /**
+   * TZ EC-S2, EC-S3: jadval o'zgargach ish vaqtidan tashqarida qolgan band vaqtlar.
+   * Bandlovlar avtomatik bekor qilinmaydi — Owner o'zi sabab bilan bekor qiladi.
+   */
+  async scheduleConflicts(
+    actor: Actor,
+    pitchId: PitchId,
+  ): Promise<{ slots: Date[]; timeZone: string }> {
+    const { venue } = await this.loadPitch(actor, pitchId);
+    const city = await this.geography.getCity(venue.cityId as CityId);
+    const timeZone = city?.timezone ?? 'Asia/Tashkent';
+    return { slots: await this.availability.outsideSchedule(pitchId, timeZone), timeZone };
   }
 
   /** Stadion shahri vaqt zonasidagi bugungi sana */

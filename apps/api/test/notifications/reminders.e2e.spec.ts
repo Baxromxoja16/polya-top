@@ -168,4 +168,26 @@ describe('Reminders, owner nudges and daily schedule (e2e): TZ 4.6, BK-3f', () =
     clock.set(zonedToUtc(day2, 21, TZ, 5));
     expect((await sweeper.run()).daily).toBe(0);
   });
+
+  it('EC-S3: closing a day with a confirmed game warns the owner and leaves the booking', async () => {
+    const closed = addDays(addDays(day, 1), 1);
+    await owner.press(`cat:exn:${pitchId}:${closed}`);
+    const out = await owner.press(`cat:exc:${pitchId}:${closed}`);
+    const warning = out.find((c) => String(c.payload.text).startsWith('⚠️'));
+    expect(String(warning?.payload.text)).toContain('tashqarida qolgan 1 ta band vaqt bor');
+    expect(String(warning?.payload.text)).toContain('18:00');
+    expect(JSON.stringify(warning?.payload.reply_markup)).toContain(`bk:og:${pitchId}`);
+    expect(await db.collection('bookings').countDocuments({ status: 'CONFIRMED' })).toBeGreaterThan(
+      0,
+    );
+  });
+
+  it('EC-S2: a change that keeps all games inside the hours gives no warning', async () => {
+    const today = addDays(day, 1);
+    // avvalgi ziddiyatni olib tashlaymiz (yopiq kunni qaytaramiz)
+    await owner.press(`cat:exd:${pitchId}:${addDays(today, 1)}`);
+    await owner.press(`cat:exn:${pitchId}:${today}`);
+    const out = await owner.press(`cat:exc:${pitchId}:${today}`);
+    expect(out.some((c) => String(c.payload.text).startsWith('⚠️'))).toBe(false);
+  });
 });

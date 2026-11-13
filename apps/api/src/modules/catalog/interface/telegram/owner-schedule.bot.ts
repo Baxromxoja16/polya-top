@@ -33,6 +33,7 @@ import { CatalogQueries } from '../../application/catalog.queries.js';
 import { VenueManagementService } from '../../application/venue-management.service.js';
 import type { PitchId } from '../../domain/pitch.js';
 import { formatSum } from './catalog.messages.js';
+import { warnScheduleConflicts } from './schedule-conflicts.view.js';
 import { actorOf } from './telegram-actor.js';
 
 const AWAIT = 'catalog.schedule';
@@ -318,6 +319,8 @@ export class OwnerScheduleBotFeature implements BotFeature {
     }
     kb.text(t.btnBack, `cat:p:${pitchId}`);
     await this.show(ctx, t.weekTitle, kb, asNew);
+    // asNew — saqlangandan keyin (EC-S2)
+    if (asNew) await warnScheduleConflicts(ctx, this.manage, pitchId);
   }
 
   private async showExceptions(ctx: BotContext, pitchId: string, asNew = false): Promise<void> {
@@ -337,6 +340,8 @@ export class OwnerScheduleBotFeature implements BotFeature {
       kb,
       asNew,
     );
+    // EC-S3: yopiq kun / qisqargan soatlar band vaqtga tushsa
+    if (asNew) await warnScheduleConflicts(ctx, this.manage, pitchId);
   }
 
   private async showRules(ctx: BotContext, pitchId: string, asNew = false): Promise<void> {

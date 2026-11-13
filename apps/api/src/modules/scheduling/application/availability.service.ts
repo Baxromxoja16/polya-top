@@ -161,6 +161,31 @@ export class AvailabilityService {
     };
   }
 
+  /**
+   * TZ EC-S2, EC-S3: jadval/istisno o'zgargach yangi ish vaqtidan tashqarida qolgan band slotlar
+   * (tasdiqlangan bandlov yoki blok). Bandlovlarga tegilmaydi — faqat Owner'ga ko'rsatiladi.
+   */
+  async outsideSchedule(
+    pitchId: string,
+    timeZone: string,
+    policy: BookingPolicy = DEFAULT_BOOKING_POLICY,
+  ): Promise<Date[]> {
+    const schedule = await this.schedules.findByPitch(pitchId);
+    if (!schedule) return [];
+    const now = this.clock.now();
+    const to = new Date(now.getTime() + (policy.horizonDays + 1) * 86_400_000);
+    const booked = (await this.occupancy.load([pitchId], now, to)).get(pitchId)?.booked;
+    if (!booked?.size) return [];
+    const today = zonedParts(now, timeZone).date;
+    const valid = new Set<number>();
+    for (let i = -1; i <= policy.horizonDays + 1; i++)
+      for (const s of slotsOf(schedule, addDays(today, i), timeZone)) valid.add(s.start.getTime());
+    return [...booked]
+      .filter((t) => t >= now.getTime() && !valid.has(t))
+      .sort((a, b) => a - b)
+      .map((t) => new Date(t));
+  }
+
   /** "Bo'sh maydon topish" (TZ 5.2): berilgan vaqtda `hours` soat bo'sh bo'lgan maydonlar. */
   async findFree(params: {
     pitchIds: readonly string[];
