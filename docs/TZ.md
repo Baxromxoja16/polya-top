@@ -793,6 +793,7 @@ Har bosqich oxirida: kod + testlar → siz tekshirasiz → tasdiqlaysiz → keyi
 | 5 — Notifications + Jobs | ✅ | BullMQ yetkazish navbati (rate limit, 429, 403 → bloklangan), eslatma 2 soat oldin, Owner'ga eslatma 10 daqiqa oldin, kunlik jadval 21:00 — ADR-0006 |
 | 6 — Reviews + Reputation | ✅ | Bandlovdan keyin baholash (1–5, izoh, 7 kun tahrir), Owner javobi, shikoyat + avto-moderatsiya, stadion reytingi kartochkada, o'yinchi ishonchliligi (NO_SHOW/bekor qilish), maydon holati xabarlari (RV-8, 24 soat) |
 | 6a — Marketing + Subscription | ✅ | `Subscription` konteksti + `FeatureGate` (FREE/PREMIUM jadvali), "Asoschi hamkor" 90 kun, `/premium` (qo'lda uzaytirish), muddat tugashidan 7/1 kun oldin eslatma; "Yangi polya" kampaniyasi (birlashtirish, 10:00–21:00, haftasiga 2 ta, 🔕 opt-out, statistika, bloklash > 2% — admin'ga); chegirma e'loni (PREMIUM, oyiga 4 ta, 10–50%, 24 soat, narx snapshot'iga kiradi); "⭐ Tavsiya etiladi" (sahifada ≤ 2); `SlotWatch` (navbat bilan, 10 daqiqa oraliq); PREMIUM rasm limiti 15 |
+| 7 — Admin + Hardening | ✅ | Admin konteksti: `/blockuser`, `/blockvenue` (tasdiq bilan, bandlovlar bekor + xabar — EC-B10/B11), `/transfervenue` (EC-T10), `/stats` (AD-4); Staff (bir martalik taklif havolasi, FREE — 1 ta, so'rovlar va eslatmalar xodimlarga ham, darhol olib tashlash — EC-D3); jadval o'zgarganda ziddiyat ogohlantirishi (EC-S2/S3); kunlik jadvalni o'chirish; per-user rate limit (EC-D4); so'kinish filtri Unicode + `PROFANITY_EXTRA`; xatolar chegarasi + admin'ga ogohlantirish; backup/restore skriptlari; yuklama testi (40 parallel foydalanuvchi: p50 ≈ 94 ms, p95 ≈ 189 ms) |
 
 ### TZ'dan chetlanishlar (asoslangan)
 | Joy | TZ | Amalda | Sabab |
@@ -801,9 +802,6 @@ Har bosqich oxirida: kod + testlar → siz tekshirasiz → tasdiqlaysiz → keyi
 | EC-O6 | Topilmagan so'rovlar Admin uchun yig'iladi | Strukturali log (`search.miss`) | Admin paneli (7-bosqich) shu log'dan hisobot oladi |
 | 4.2 | Admin boshqaruvi bot orqali | Bot buyruqlari (`/admin`, `/cities`, `/addcity`, `/pending` ...) | Adminlar ichki xodim; to'liq web panel — v2 |
 | 7.6, 4.6 | Delayed job'lar + Transactional Outbox | BullMQ — faqat yetkazish uchun; vaqt triggerlari holatdan (davriy tekshiruv + atomik flag) — ADR-0006 | Hamma triggerlar bandlov holatidan aniqlanadi; Outbox'siz ham "ko'pi bilan bir marta" kafolati |
-| 4.6 | Kunlik jadvalni Owner o'chira oladi | Hozircha hammaga yuboriladi | Sozlama 7-bosqichda |
-| 3 (Staff) | Staff roli | Hozircha faqat Owner/Admin | Xodim taklif qilish oqimi 7-bosqichda (hardening) |
-| EC-S2, EC-S3, EC-B9 | Jadval/istisno/maydon holati o'zgarganda mavjud bandlovlar haqida ogohlantirish | 7-bosqichda | Asosiy oqim ishlaydi; ogohlantirish — qulaylik |
 | BK-3e | Navbat ≤ 3 | Parallel ikki so'rov kamdan-kam 4-chisini o'tkazib yuborishi mumkin | Navbat — yumshoq cheklov; double booking'ga ta'sir qilmaydi |
 | SP-6, SP-7 | Stadion darajasida sozlanadi | Hozircha platforma standarti (14 kun, 30 daqiqa, maks. 4 soat) — `BookingPolicy` | Owner sozlamalari 4-bosqichda bandlov sozlamalari bilan birga |
 | RV-2 | Mezonlar (yoritish, kiyinish xonasi...) va rasm | Faqat umumiy baho + matn | MVP uchun yetarli; mezonlar keyingi iteratsiyada |
@@ -813,5 +811,10 @@ Har bosqich oxirida: kod + testlar → siz tekshirasiz → tasdiqlaysiz → keyi
 | 4.9 | Chegirma limiti "oyiga" | Sirpanuvchi 30 kun | Oy boshida limitlar "portlab" ketmaydi |
 | 4.9 | Chegirma e'lonidagi "Bandlash" tugmasi | Stadion kartochkasini ochadi (bosish hisoblanadi, MK-7) | Kartochkada chegirmali narx va bo'sh vaqtlar to'ri bor; band bo'lsa — bandlash oqimi "band" deydi |
 | EC-M5 | FREE'da faqat birinchi 5 ta rasm ko'rsatiladi | O'yinchiga hozircha faqat birinchi rasm ko'rsatiladi | Galereya v2; rasmlar o'chirilmaydi |
-| 4.9 | Staff limiti (FREE — 1 ta) | `FeatureGate`da tayyor (`STAFF`) | Staff taklif qilish oqimi — 7-bosqich |
+| 7 (Sentry) | Xatolar monitoringi — Sentry | Xatolar chegarasi + adminlarga Telegram ogohlantirishi (daqiqasiga 1 ta) + strukturali log | Self-hosted (ADR-0004), tashqi servisga ma'lumot chiqmaydi; Sentry/GlitchTip — keyin ixtiyoriy |
+| 7 (load test) | Yuklama testi | Ilova ichidagi kechikish testi (Telegram tarmog'isiz) | Haqiqiy bot token'siz qayta ishlab chiqariladigan; tarmoq kechikishi Telegram'ga bog'liq |
+| EC-B9 | Maydon MAINTENANCE'ga o'tkazilganda ro'yxat | Maydon holatini o'zgartirish UI'si hali yo'q | UI qo'shilganda `outsideSchedule` bilan bir xil ogohlantirish ishlatiladi |
+| EC-S3 | Owner tasdig'idan keyin o'yinchilarga sabab bilan xabar | Ogohlantirish + "Bandlovlarni ko'rish" tugmasi; Owner har birini sabab bilan bekor qiladi (mavjud BK-6 oqimi) | Ommaviy bekor qilish xavfli; bittalab — aniq nazorat |
+| EC-M5 | PREMIUM tugasa "qaysi xodim qoladi?" tanlovi, 7 kun | Mavjud xodimlar qoladi, yangisi qo'shilmaydi | Tanlov oqimi — keyingi iteratsiya |
+| 3 (Staff ruxsatlari) | Owner har bir xodimga ruxsatlarni tanlaydi | Bitta standart to'plam: bandlovlar, qo'lda bandlov, blok | MVP uchun yetarli; `permissions` maydoni keyin |
 | 5.2 | Sana → vaqt → lokatsiya → natija | Sana → vaqt → natija (shahar bo'yicha, arzonidan) | Lokatsiya so'rash qadamni uzaytiradi; masofa bo'yicha qidiruv "📍 Yaqin atrofdagi"da bor |
