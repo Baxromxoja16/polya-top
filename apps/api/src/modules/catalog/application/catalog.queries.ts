@@ -153,6 +153,7 @@ export class CatalogQueries {
         id: venue.id,
         name: venue.name,
         ownerId: venue.ownerId,
+        staffIds: venue.staffIds,
         isPublic: venue.isPublic,
         phones: venue.phones,
         landmarkText: venue.landmarkText,
@@ -170,6 +171,17 @@ export class CatalogQueries {
       if (ctx) result.set(id, ctx);
     }
     return result;
+  }
+
+  /** TZ 3: xodim sifatida biriktirilgan stadionlar */
+  async staffVenues(userId: string): Promise<Venue[]> {
+    return this.venues.listByStaff(userId);
+  }
+
+  /** Bandlovlarni boshqara oladigan stadionlar: o'zinikilar + xodim bo'lganlari */
+  async managedVenues(userId: string): Promise<Venue[]> {
+    const [own, staff] = await Promise.all([this.ownerVenues(userId), this.staffVenues(userId)]);
+    return [...own, ...staff.filter((v) => !own.some((o) => o.id === v.id))];
   }
 
   async ownerVenues(ownerId: string): Promise<Venue[]> {

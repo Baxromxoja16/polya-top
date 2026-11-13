@@ -47,6 +47,11 @@ export class MongoVenueRepository extends VenueRepository implements OnModuleIni
     return (await this.model.exists({ slug })) !== null;
   }
 
+  async listByStaff(userId: string): Promise<Venue[]> {
+    if (!Types.ObjectId.isValid(userId)) return [];
+    return this.many({ staffIds: oid(userId) }, { createdAt: 1 });
+  }
+
   async listByOwner(ownerId: string): Promise<Venue[]> {
     if (!Types.ObjectId.isValid(ownerId)) return [];
     return this.many({ ownerId: oid(ownerId) }, { createdAt: 1 });
@@ -224,6 +229,7 @@ function toVenueDoc(v: Venue): VenueDocument {
     pitchDetailsComplete: v.pitchDetailsComplete,
     ratingAvg: v.rating.avg,
     ratingCount: v.rating.count,
+    staffIds: v.staffIds.map((id) => oid(id)),
     status: v.status,
     rejectReason: v.rejectReason,
     approvedAt: v.approvedAt,
@@ -254,6 +260,7 @@ function toVenue(d: VenueDocument | null): Venue | null {
       photos: d.photos,
       pitchDetailsComplete: d.pitchDetailsComplete ?? false,
       rating: { avg: d.ratingAvg ?? 0, count: d.ratingCount ?? 0 },
+      staffIds: (d.staffIds ?? []).map((id) => id.toHexString()),
       status: d.status,
       rejectReason: d.rejectReason,
       approvedAt: d.approvedAt,

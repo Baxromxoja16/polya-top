@@ -22,6 +22,7 @@ export interface VenueDocument {
   pitchDetailsComplete: boolean;
   ratingAvg: number;
   ratingCount: number;
+  staffIds?: Types.ObjectId[];
   status: VenueStatus;
   rejectReason: string | null;
   approvedAt: Date | null;
@@ -60,6 +61,7 @@ export const VenueSchema = new Schema<VenueDocument>(
     pitchDetailsComplete: { type: Boolean, default: false },
     ratingAvg: { type: Number, default: 0 },
     ratingCount: { type: Number, default: 0 },
+    staffIds: { type: [Schema.Types.ObjectId], default: [] },
     status: { type: String, required: true },
     rejectReason: { type: String, default: null },
     approvedAt: { type: Date, default: null },
@@ -74,6 +76,7 @@ export const VenueSchema = new Schema<VenueDocument>(
 );
 VenueSchema.index({ slug: 1 }, { unique: true, name: 'uniq_slug' });
 VenueSchema.index({ ownerId: 1 }, { name: 'owner' });
+VenueSchema.index({ staffIds: 1 }, { name: 'staff' });
 VenueSchema.index({ location: '2dsphere' }, { name: 'geo_location' });
 VenueSchema.index({ status: 1, cityId: 1, districtId: 1, completeness: -1 }, { name: 'catalog' });
 VenueSchema.index({ status: 1, cityId: 1, searchTokens: 1 }, { name: 'text_tokens' });

@@ -27,6 +27,8 @@ export abstract class VenueRepository {
   abstract findBySlug(slug: string): Promise<Venue | null>;
   abstract slugExists(slug: string): Promise<boolean>;
   abstract listByOwner(ownerId: string): Promise<Venue[]>;
+  /** TZ 3: xodim biriktirilgan stadionlar */
+  abstract listByStaff(userId: string): Promise<Venue[]>;
   abstract listPendingReview(): Promise<Venue[]>;
   abstract findByIds(ids: readonly string[]): Promise<Venue[]>;
   /** MK-5: "Yangi polya" e'loni uchun — shu vaqtdan keyin tasdiqlangan ommaviy stadionlar */

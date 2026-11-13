@@ -49,6 +49,8 @@ export interface VenueProps {
   pitchDetailsComplete: boolean;
   /** TZ RV-7: denormalizatsiya — Reviews konteksti yangilaydi */
   rating: { avg: number; count: number };
+  /** TZ 3: Owner taklif qilgan xodimlar (userId). Bandlovlarni boshqaradi, stadionni tahrirlamaydi */
+  staffIds: string[];
   status: VenueStatus;
   rejectReason: string | null;
   approvedAt: Date | null;
@@ -104,6 +106,7 @@ export class Venue extends AggregateRoot<VenueId> {
         photos: [],
         pitchDetailsComplete: false,
         rating: { avg: 0, count: 0 },
+        staffIds: [],
         status: 'PENDING_REVIEW',
         rejectReason: null,
         approvedAt: null,
@@ -189,6 +192,28 @@ export class Venue extends AggregateRoot<VenueId> {
    */
   get rating(): { avg: number; count: number } {
     return this.#p.rating;
+  }
+
+  get staffIds(): readonly string[] {
+    return this.#p.staffIds;
+  }
+
+  /** TZ 3, 4.9: limit tarif bo'yicha (FREE — 1); egasi o'zini xodim qila olmaydi */
+  addStaff(userId: string, limit: number, now: Date): boolean {
+    if (userId === this.#p.ownerId || this.#p.staffIds.includes(userId)) return false;
+    if (this.#p.staffIds.length >= limit)
+      throw new InvalidVenueError('Staff limit reached', { limit });
+    this.#p.staffIds = [...this.#p.staffIds, userId];
+    this.touch(now);
+    return true;
+  }
+
+  /** EC-D3: ruxsat darhol bekor bo'ladi (har amalda tekshiriladi) */
+  removeStaff(userId: string, now: Date): boolean {
+    if (!this.#p.staffIds.includes(userId)) return false;
+    this.#p.staffIds = this.#p.staffIds.filter((id) => id !== userId);
+    this.touch(now);
+    return true;
   }
 
   setRating(avg: number, count: number, now: Date): void {

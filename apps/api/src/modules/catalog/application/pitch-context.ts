@@ -9,6 +9,8 @@ export interface PitchContext {
     id: string;
     name: string;
     ownerId: string;
+    /** TZ 3: bandlovlarni boshqaradigan xodimlar */
+    staffIds: readonly string[];
     isPublic: boolean;
     phones: readonly PhoneNumber[];
     landmarkText: string;

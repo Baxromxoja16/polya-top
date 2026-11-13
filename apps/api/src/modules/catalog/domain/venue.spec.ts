@@ -107,3 +107,23 @@ describe('Pitch', () => {
     expect(() => p.setSize('katta', now)).toThrow(InvalidPitchError);
   });
 });
+
+describe('Venue staff (TZ 3, 4.9, EC-D3)', () => {
+  it('adds staff up to the plan limit, not the owner, not twice', () => {
+    const v = register();
+    expect(v.addStaff(v.ownerId, 1, now)).toBe(false);
+    expect(v.addStaff('s1', 1, now)).toBe(true);
+    expect(v.addStaff('s1', 1, now)).toBe(false);
+    expect(() => v.addStaff('s2', 1, now)).toThrow(InvalidVenueError);
+    expect(v.addStaff('s2', 100, now)).toBe(true);
+    expect(v.staffIds).toEqual(['s1', 's2']);
+  });
+
+  it('removal takes effect immediately', () => {
+    const v = register();
+    v.addStaff('s1', 1, now);
+    expect(v.removeStaff('s1', now)).toBe(true);
+    expect(v.staffIds).toEqual([]);
+    expect(v.removeStaff('s1', now)).toBe(false);
+  });
+});
