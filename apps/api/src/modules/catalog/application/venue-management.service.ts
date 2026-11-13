@@ -78,6 +78,19 @@ export class VenueManagementService {
     return venue;
   }
 
+  /** EC-T10: faqat Admin; yangi egaga OWNER roli chaqiruvchi tomonidan beriladi */
+  async transferOwnership(
+    actor: Actor,
+    venueId: VenueId,
+    newOwnerId: string,
+  ): Promise<{ venue: Venue; previousOwnerId: string } | null> {
+    const venue = await this.loadForAdmin(actor, venueId);
+    const previousOwnerId = venue.ownerId;
+    if (!venue.transferOwnership(newOwnerId, this.clock.now())) return null;
+    await this.venues.save(venue);
+    return { venue, previousOwnerId };
+  }
+
   /** TZ AD-2, EC-B10: bandlovlarni bekor qilishni chaqiruvchi (Admin konteksti) bajaradi */
   async setBlocked(actor: Actor, venueId: VenueId, blocked: boolean): Promise<Venue> {
     const venue = await this.loadForAdmin(actor, venueId);

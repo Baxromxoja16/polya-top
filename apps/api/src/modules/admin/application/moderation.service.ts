@@ -7,7 +7,13 @@ import {
   type VenueId,
   VenueManagementService,
 } from '../../catalog/index.js';
-import { type BlockUserError, SetUserBlockedUseCase } from '../../identity/index.js';
+import {
+  type BlockUserError,
+  GrantRoleUseCase,
+  IdentityQueries,
+  SetUserBlockedUseCase,
+  type UserContactView,
+} from '../../identity/index.js';
 
 const FAR_FUTURE_MS = 400 * 86_400_000;
 
@@ -25,7 +31,30 @@ export class ModerationService {
     private readonly bookings: BookingService,
     private readonly bookingQueries: BookingQueries,
     private readonly clock: Clock,
+    private readonly identity: IdentityQueries,
+    private readonly grantRole: GrantRoleUseCase,
   ) {}
+
+  /** EC-T10: Owner akkaunti yo'qolgan — egalik boshqa akkauntga (OWNER roli bilan) */
+  async transferVenue(
+    admin: Actor,
+    slug: string,
+    newOwnerRef: string,
+  ): Promise<
+    Result<
+      { venueName: string; previousOwnerId: string; newOwner: UserContactView },
+      'VENUE_NOT_FOUND' | 'USER_NOT_FOUND' | 'NO_CHANGE'
+    >
+  > {
+    const card = await this.catalog.venueCard(slug);
+    if (!card) return err('VENUE_NOT_FOUND');
+    const newOwner = await this.identity.findByRef(newOwnerRef);
+    if (!newOwner) return err('USER_NOT_FOUND');
+    const moved = await this.venues.transferOwnership(admin, card.venue.id as VenueId, newOwner.id);
+    if (!moved) return err('NO_CHANGE');
+    await this.grantRole.execute(newOwner.id, 'OWNER');
+    return ok({ venueName: moved.venue.name, previousOwnerId: moved.previousOwnerId, newOwner });
+  }
 
   /** EC-B11: bandlovlar avtomatik bekor qilinadi */
   async blockUser(ref: string, reason: string): Promise<Result<Booking[], BlockUserError>> {

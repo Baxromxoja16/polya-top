@@ -208,6 +208,15 @@ export class Venue extends AggregateRoot<VenueId> {
     return true;
   }
 
+  /** EC-T10: Admin egalikni boshqa akkauntga o'tkazadi (yangi egasi xodim bo'lsa — ro'yxatdan chiqadi) */
+  transferOwnership(newOwnerId: string, now: Date): boolean {
+    if (newOwnerId === this.#p.ownerId) return false;
+    this.#p.ownerId = newOwnerId;
+    this.#p.staffIds = this.#p.staffIds.filter((id) => id !== newOwnerId);
+    this.touch(now);
+    return true;
+  }
+
   /** EC-D3: ruxsat darhol bekor bo'ladi (har amalda tekshiriladi) */
   removeStaff(userId: string, now: Date): boolean {
     if (!this.#p.staffIds.includes(userId)) return false;

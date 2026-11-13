@@ -34,6 +34,7 @@ const HELP = [
   '/stats — statistika',
   '/blockuser <ID yoki +998…> | sabab · /unblockuser',
   '/blockvenue <slug> | sabab · /unblockvenue',
+  "/transfervenue <slug> | <yangi egasi> — egalikni o'tkazish",
 ].join('\n');
 
 /**

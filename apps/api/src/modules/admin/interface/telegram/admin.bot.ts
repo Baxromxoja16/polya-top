@@ -88,6 +88,35 @@ export class AdminModerationBotFeature implements BotFeature {
       await ctx.reply(adminText.venueBlocked(r.value.name, r.value.cancelled.length));
     });
 
+    // EC-T10
+    admin.command('transfervenue', async (ctx) => {
+      const [slug, ref] = splitPipe(ctx.match);
+      if (!slug || !ref) return void (await ctx.reply(adminText.usageTransfer));
+      const r = await this.moderation.transferVenue(actorOf(ctx), slug, ref);
+      if (!r.ok)
+        return void (await ctx.reply(
+          r.error === 'VENUE_NOT_FOUND'
+            ? adminText.notFound
+            : r.error === 'USER_NOT_FOUND'
+              ? adminText.userNotFound
+              : adminText.noChange,
+        ));
+      const { venueName, previousOwnerId, newOwner } = r.value;
+      await this.messenger.send(
+        newOwner.telegramId,
+        affectedMessages[newOwner.language].becameOwner(venueName),
+      );
+      const previous = await this.identity.contactOf(previousOwnerId);
+      if (previous)
+        await this.messenger.send(
+          previous.telegramId,
+          affectedMessages[previous.language].lostOwnership(venueName),
+        );
+      await ctx.reply(
+        adminText.transferred(venueName, newOwner.displayName ?? String(newOwner.telegramId)),
+      );
+    });
+
     admin.command('unblockvenue', async (ctx) => {
       const slug = ctx.match.trim();
       if (!slug) return void (await ctx.reply(adminText.usageUnblockVenue));

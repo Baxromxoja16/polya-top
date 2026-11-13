@@ -188,4 +188,19 @@ describe('Admin moderation (e2e): TZ AD-2, EC-B10, EC-B11', () => {
     expect(text).toContain("📅 24 soat: so'rov 3 · ✅ 0 · ❌ 0 · ⌛ 0 · 🚫 3");
     expect(texts(await u(OWNER).send('/stats')).join()).not.toContain('📊');
   });
+
+  it('EC-T10: the admin transfers a venue to another account', async () => {
+    expect(texts(await u(ADMIN).send(`/transfervenue ${slug} | 1`))[0]).toContain('topilmadi');
+    calls.length = 0;
+    const out = await u(ADMIN).send(`/transfervenue ${slug} | ${PLAYER2}`);
+    expect(texts(out).at(-1)).toContain("egaligi U ga o'tkazildi");
+    const newOwner = await db.collection('users').findOne({ telegramId: PLAYER2 });
+    expect(newOwner?.roles).toContain('OWNER');
+    expect(String((await db.collection('venues').findOne())?.ownerId)).toBe(String(newOwner?._id));
+    expect(inbox(PLAYER2).at(-1)).toContain('sizning akkauntingizga');
+    expect(inbox(OWNER).at(-1)).toContain('boshqa akkauntga');
+    // eski egasi endi boshqara olmaydi
+    const old = await u(OWNER).press(`cat:v:${(await db.collection('venues').findOne())?._id}`);
+    expect(texts(old).join()).not.toContain('Tarif');
+  });
 });

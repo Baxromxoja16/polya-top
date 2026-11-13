@@ -171,8 +171,13 @@ export class BookingSweeper implements OnApplicationBootstrap, OnApplicationShut
   /** TZ 4.6: har kuni 21:00 dan keyin Owner'ga ertangi jadval — bir marta (Redis SET NX) */
   private async dailySchedules(): Promise<number> {
     const upcoming = await this.bookings.upcomingBookings(30);
+    // Joriy egasi bo'yicha (EC-T10: egalik o'tkazilgan bo'lsa, bandlovdagi `ownerId` eskirgan)
+    const owners = await this.catalog.pitchContexts([...new Set(upcoming.map((b) => b.pitchId))]);
     const byOwner = new Map<string, Booking[]>();
-    for (const b of upcoming) byOwner.set(b.ownerId, [...(byOwner.get(b.ownerId) ?? []), b]);
+    for (const b of upcoming) {
+      const ownerId = owners.get(b.pitchId)?.venue.ownerId ?? b.ownerId;
+      byOwner.set(ownerId, [...(byOwner.get(ownerId) ?? []), b]);
+    }
     let sent = 0;
     for (const [ownerId, items] of byOwner) {
       const contexts = await this.catalog.pitchContexts(items.map((b) => b.pitchId));
