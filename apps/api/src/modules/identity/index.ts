@@ -6,7 +6,7 @@ export { IdentityQueries, type UserContactView } from './application/identity.qu
 export { type AudienceMember, MarketingAudience } from './application/marketing-audience.js';
 export {
   type BlockUserError,
-  GrantStaffRoleUseCase,
+  GrantRoleUseCase,
   SetUserBlockedUseCase,
 } from './application/update-profile.use-cases.js';
 export { type UserCounts, UserStatistics } from './application/user-statistics.js';

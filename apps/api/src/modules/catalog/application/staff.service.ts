@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Clock, err, ok, type Result } from '@polya/shared-kernel';
-import { GrantStaffRoleUseCase } from '../../identity/index.js';
+import { GrantRoleUseCase } from '../../identity/index.js';
 import { FeatureGate } from '../../subscription/index.js';
 import { VenueRepository } from '../domain/repositories.js';
 import type { Venue, VenueId } from '../domain/venue.js';
@@ -26,7 +26,7 @@ export class StaffService {
     private readonly venues: VenueRepository,
     private readonly invites: StaffInviteStore,
     private readonly features: FeatureGate,
-    private readonly grantRole: GrantStaffRoleUseCase,
+    private readonly grantRole: GrantRoleUseCase,
     private readonly clock: Clock,
   ) {}
 
@@ -53,7 +53,7 @@ export class StaffService {
       return err('LIMIT_REACHED');
     }
     await this.venues.save(venue);
-    await this.grantRole.execute(userId);
+    await this.grantRole.execute(userId, 'STAFF');
     return ok(venue);
   }
 

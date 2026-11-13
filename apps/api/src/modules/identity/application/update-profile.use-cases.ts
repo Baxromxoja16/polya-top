@@ -10,6 +10,7 @@ import { UserRepository } from '../domain/user.repository.js';
 import { AdminDirectory } from './admin-directory.js';
 import { CityCatalog } from './city-catalog.js';
 import { UserNotFoundError } from './errors.js';
+import { findUserByRef } from './user-ref.js';
 
 // @Injectable — konstruktor metadata'si (DI) voris klasslarga meros bo'lib o'tishi uchun
 @Injectable()
@@ -55,17 +56,17 @@ export class RenameUserUseCase extends UserCommand {
   }
 }
 
-/** TZ 3: xodim taklifini qabul qilgan foydalanuvchiga STAFF roli (Catalog chaqiradi) */
+/** TZ 3, EC-T10: boshqa kontekst so'rovi bilan rol berish (xodim — STAFF, egalik o'tkazilganda — OWNER) */
 @Injectable()
-export class GrantStaffRoleUseCase {
+export class GrantRoleUseCase {
   constructor(
     private readonly users: UserRepository,
     private readonly clock: Clock,
   ) {}
 
-  async execute(userId: string): Promise<void> {
+  async execute(userId: string, role: 'STAFF' | 'OWNER'): Promise<void> {
     const user = await this.users.findById(userId as UserId);
-    if (user?.grantRole('STAFF', this.clock.now())) await this.users.save(user);
+    if (user?.grantRole(role, this.clock.now())) await this.users.save(user);
   }
 }
 
@@ -107,7 +108,7 @@ export class SetUserBlockedUseCase {
     ref: string;
     blocked: boolean;
   }): Promise<Result<{ userId: string; telegramId: number }, BlockUserError>> {
-    const user = await this.find(input.ref);
+    const user = await findUserByRef(this.users, input.ref);
     if (!user) return err('NOT_FOUND');
     if (input.blocked && this.admins.isAdmin(user.telegramId)) return err('IS_ADMIN');
     const now = this.clock.now();
@@ -115,21 +116,6 @@ export class SetUserBlockedUseCase {
     if (!changed) return err('NO_CHANGE');
     await this.users.save(user);
     return ok({ userId: user.id, telegramId: user.telegramId });
-  }
-
-  private async find(ref: string): Promise<User | null> {
-    // "+998…" yoki "998…" — telefon; qolgan raqamlar — Telegram ID
-    const trimmed = ref.trim().replace(/[\s()-]/g, '');
-    if (/^\+?998\d{9}$/.test(trimmed)) {
-      try {
-        return await this.users.findByPhone(PhoneNumber.parse(trimmed));
-      } catch {
-        return null;
-      }
-    }
-    return /^\d{1,15}$/.test(trimmed)
-      ? this.users.findByTelegramId(Number(trimmed) as TelegramId)
-      : null;
   }
 }
 

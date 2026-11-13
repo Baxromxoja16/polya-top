@@ -3,6 +3,7 @@ import type { Language } from '@polya/shared-kernel';
 import type { UserId } from '../domain/user.js';
 import { UserRepository } from '../domain/user.repository.js';
 import { AdminDirectory } from './admin-directory.js';
+import { findUserByRef } from './user-ref.js';
 
 /** Boshqa kontekstlar uchun minimal foydalanuvchi ko'rinishi (xabar yuborish, kontakt ko'rsatish). */
 export interface UserContactView {
@@ -35,6 +36,12 @@ export class IdentityQueries {
       botBlocked: user.botBlocked,
       dailyScheduleOff: user.dailyScheduleOff,
     };
+  }
+
+  /** Admin buyruqlari uchun: Telegram ID yoki telefon bo'yicha */
+  async findByRef(ref: string): Promise<UserContactView | null> {
+    const user = await findUserByRef(this.users, ref);
+    return user ? this.contactOf(user.id) : null;
   }
 
   adminTelegramIds(): readonly number[] {

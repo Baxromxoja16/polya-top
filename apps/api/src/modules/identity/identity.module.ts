@@ -17,7 +17,7 @@ import { ShareContactUseCase } from './application/share-contact.use-case.js';
 import {
   ChangeCityUseCase,
   ChangeLanguageUseCase,
-  GrantStaffRoleUseCase,
+  GrantRoleUseCase,
   RenameUserUseCase,
   SetBotBlockedUseCase,
   SetDailyScheduleUseCase,
@@ -76,7 +76,7 @@ import { PhoneGate } from './interface/telegram/phone-gate.js';
     SetMarketingOptOutUseCase,
     SetUserBlockedUseCase,
     SetDailyScheduleUseCase,
-    GrantStaffRoleUseCase,
+    GrantRoleUseCase,
     OwnerPreferencesBotFeature,
     PhoneGate,
     IdentityContextFeature,
@@ -89,7 +89,7 @@ import { PhoneGate } from './interface/telegram/phone-gate.js';
     MarketingAudience,
     SetUserBlockedUseCase,
     UserStatistics,
-    GrantStaffRoleUseCase,
+    GrantRoleUseCase,
   ],
 })
 export class IdentityModule implements OnModuleInit {
