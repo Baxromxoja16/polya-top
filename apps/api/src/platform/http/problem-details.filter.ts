@@ -73,14 +73,17 @@ export class ProblemDetailsFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const response = exception.getResponse();
-      const code = STATUS_CODES[status] ?? `HTTP_${status}`;
+      let code = STATUS_CODES[status] ?? `HTTP_${status}`;
       if (typeof response === 'object' && response !== null) {
         const {
           message,
           statusCode: _s,
           error: _e,
+          code: custom,
           ...extensions
         } = response as Record<string, unknown>;
+        // `new UnauthorizedException({ code: 'TOKEN_EXPIRED', message })` — aniqroq barqaror kod
+        if (typeof custom === 'string' && /^[A-Z][A-Z0-9_]*$/.test(custom)) code = custom;
         return {
           ...extensions,
           ...base(status, code, exception.message),
