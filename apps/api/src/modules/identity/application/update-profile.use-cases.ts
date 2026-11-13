@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { Clock, err, type Language, ok, type Result } from '@polya/shared-kernel';
+import { Clock, err, type Language, ok, PhoneNumber, type Result } from '@polya/shared-kernel';
 import { InvalidDisplayNameError, type TelegramId, type User } from '../domain/user.js';
 import { UserRepository } from '../domain/user.repository.js';
+import { AdminDirectory } from './admin-directory.js';
 import { CityCatalog } from './city-catalog.js';
 import { UserNotFoundError } from './errors.js';
 
@@ -56,6 +57,50 @@ export class SetMarketingOptOutUseCase extends UserCommand {
     const user = await this.load(input.telegramId);
     if (user.setMarketingOptOut(input.optOut, this.clock.now())) await this.users.save(user);
     return user;
+  }
+}
+
+export type BlockUserError = 'NOT_FOUND' | 'IS_ADMIN' | 'NO_CHANGE';
+
+/**
+ * TZ AD-2: foydalanuvchini Telegram ID yoki telefon raqami bo'yicha bloklash/blokdan chiqarish.
+ * Platforma adminini bloklab bo'lmaydi.
+ */
+@Injectable()
+export class SetUserBlockedUseCase {
+  constructor(
+    private readonly users: UserRepository,
+    private readonly clock: Clock,
+    private readonly admins: AdminDirectory,
+  ) {}
+
+  async execute(input: {
+    ref: string;
+    blocked: boolean;
+  }): Promise<Result<{ userId: string; telegramId: number }, BlockUserError>> {
+    const user = await this.find(input.ref);
+    if (!user) return err('NOT_FOUND');
+    if (input.blocked && this.admins.isAdmin(user.telegramId)) return err('IS_ADMIN');
+    const now = this.clock.now();
+    const changed = input.blocked ? user.block(now) : user.unblock(now);
+    if (!changed) return err('NO_CHANGE');
+    await this.users.save(user);
+    return ok({ userId: user.id, telegramId: user.telegramId });
+  }
+
+  private async find(ref: string): Promise<User | null> {
+    // "+998…" yoki "998…" — telefon; qolgan raqamlar — Telegram ID
+    const trimmed = ref.trim().replace(/[\s()-]/g, '');
+    if (/^\+?998\d{9}$/.test(trimmed)) {
+      try {
+        return await this.users.findByPhone(PhoneNumber.parse(trimmed));
+      } catch {
+        return null;
+      }
+    }
+    return /^\d{1,15}$/.test(trimmed)
+      ? this.users.findByTelegramId(Number(trimmed) as TelegramId)
+      : null;
   }
 }
 

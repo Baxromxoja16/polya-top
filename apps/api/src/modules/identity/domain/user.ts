@@ -290,6 +290,21 @@ export class User extends AggregateRoot<UserId> {
     return true;
   }
 
+  /** TZ AD-2: Admin bloklaydi — bot bu foydalanuvchiga xizmat qilmaydi */
+  block(now: Date): boolean {
+    if (this.#props.status === 'BLOCKED') return false;
+    this.#props.status = 'BLOCKED';
+    this.touch(now);
+    return true;
+  }
+
+  unblock(now: Date): boolean {
+    if (this.#props.status === 'ACTIVE') return false;
+    this.#props.status = 'ACTIVE';
+    this.touch(now);
+    return true;
+  }
+
   /** TZ MK-4: `🔕` tugmasi yoki sozlamalardan */
   setMarketingOptOut(optOut: boolean, now: Date): boolean {
     if (this.#props.marketingOptOut === optOut) return false;

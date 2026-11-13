@@ -5,6 +5,8 @@ export const identityMessages = defineMessages(
     chooseLanguage: 'Tilni tanlang · Выберите язык',
     languageName: "O'zbekcha",
     languageSaved: "✅ Til: O'zbekcha",
+    accountBlocked:
+      "⛔ Akkauntingiz qoidabuzarlik sababli bloklangan. Savollar bo'lsa, qo'llab-quvvatlash xizmatiga yozing.",
     welcomeNew: (name: string) =>
       `Assalomu alaykum, ${name}! 👋\n\n` +
       "Polya.top — shahringizdagi futbol maydonlari bitta joyda: bo'sh vaqtlar, narxlar, " +
@@ -47,6 +49,8 @@ export const identityMessages = defineMessages(
     chooseLanguage: 'Tilni tanlang · Выберите язык',
     languageName: 'Русский',
     languageSaved: '✅ Язык: Русский',
+    accountBlocked:
+      '⛔ Ваш аккаунт заблокирован за нарушение правил. По вопросам обратитесь в поддержку.',
     welcomeNew: (name) =>
       `Здравствуйте, ${name}! 👋\n\n` +
       'Polya.top — все футбольные поля вашего города в одном месте: свободное время, цены, ' +

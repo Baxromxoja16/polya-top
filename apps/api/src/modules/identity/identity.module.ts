@@ -20,6 +20,7 @@ import {
   RenameUserUseCase,
   SetBotBlockedUseCase,
   SetMarketingOptOutUseCase,
+  SetUserBlockedUseCase,
 } from './application/update-profile.use-cases.js';
 import { OwnerApplicationRepository } from './domain/owner-application.js';
 import { UserRepository } from './domain/user.repository.js';
@@ -67,12 +68,13 @@ import { PhoneGate } from './interface/telegram/phone-gate.js';
     RenameUserUseCase,
     SetBotBlockedUseCase,
     SetMarketingOptOutUseCase,
+    SetUserBlockedUseCase,
     PhoneGate,
     IdentityContextFeature,
     IdentityBotFeature,
     OwnerApplicationBotFeature,
   ],
-  exports: [PhoneGate, IdentityQueries, MarketingAudience],
+  exports: [PhoneGate, IdentityQueries, MarketingAudience, SetUserBlockedUseCase],
 })
 export class IdentityModule implements OnModuleInit {
   constructor(

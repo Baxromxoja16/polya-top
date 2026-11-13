@@ -8,6 +8,7 @@ import {
 } from '../../../../platform/telegram/bot-feature.js';
 import { EnsureUserUseCase } from '../../application/ensure-user.use-case.js';
 import type { User } from '../../domain/user.js';
+import { identityMessages } from './identity.messages.js';
 
 export function toCurrentUser(user: User, isNew: boolean): CurrentUser {
   return {
@@ -49,6 +50,13 @@ export class IdentityContextFeature implements BotFeature {
       });
       ctx.currentUser = toCurrentUser(user, isNew);
       ctx.lang = user.language;
+      // TZ AD-2: bloklangan foydalanuvchiga bot xizmat qilmaydi (xizmat update'lari bundan mustasno)
+      if (user.status === 'BLOCKED' && !ctx.myChatMember) {
+        const text = identityMessages[ctx.lang].accountBlocked;
+        if (ctx.callbackQuery) await ctx.answerCallbackQuery({ text, show_alert: true });
+        else if (ctx.message) await ctx.reply(text);
+        return;
+      }
       await next();
     });
   }
