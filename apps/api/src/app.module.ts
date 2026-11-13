@@ -12,6 +12,7 @@ import { ReviewsModule } from './modules/reviews/index.js';
 import { SchedulingModule } from './modules/scheduling/index.js';
 import { SubscriptionModule } from './modules/subscription/index.js';
 import { DatabaseModule } from './platform/database/database.module.js';
+import { AuthModule } from './platform/http/auth/auth.module.js';
 import { LoggerModule } from './platform/logging/logger.module.js';
 import { RedisModule } from './platform/redis/redis.module.js';
 import { TelegramModule } from './platform/telegram/telegram.module.js';
@@ -27,6 +28,7 @@ import { ClockModule } from './platform/time/clock.module.js';
     DatabaseModule,
     RedisModule,
     ClockModule,
+    AuthModule,
     TelegramModule,
     HealthModule,
     IdentityModule,
