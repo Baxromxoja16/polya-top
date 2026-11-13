@@ -57,6 +57,14 @@ export class TelegramBotService implements OnApplicationBootstrap, OnApplication
     this.#composed = true;
     const bot = this.bot;
 
+    // Xatolar chegarasi: webhook ham, polling ham (handleUpdate bot.catch'ni chaqirmaydi)
+    bot.use(async (ctx, next) => {
+      try {
+        await next();
+      } catch (error) {
+        await this.onError(ctx, error);
+      }
+    });
     bot.use(dedupUpdates(this.redis));
     bot.use(defaultLanguage);
     bot.use(rateLimit(this.redis, this.config.get('BOT_RATE_LIMIT_PER_MINUTE', { infer: true })));
@@ -78,12 +86,35 @@ export class TelegramBotService implements OnApplicationBootstrap, OnApplication
 
     for (const feature of this.discoverFeatures()) feature.register(bot);
 
-    bot.catch((error) => {
-      this.#logger.error(
-        { err: error.error, updateId: error.ctx.update.update_id },
-        'Unhandled bot error',
-      );
-    });
+    // Polling rejimida grammY'ning o'zi ushlaydigan xatolar uchun (odatda bu yerga yetib kelmaydi)
+    bot.catch((error) => this.onError(error.ctx, error.error));
+  }
+
+  private async onError(ctx: BotContext, error: unknown): Promise<void> {
+    this.#logger.error({ err: error, updateId: ctx.update.update_id }, 'Unhandled bot error');
+    // Foydalanuvchiga — "kutilmagan xatolik"; tugma aylanib qolmasin
+    const text = coreMessages[ctx.lang ?? 'uz'].error;
+    await (ctx.callbackQuery
+      ? ctx.answerCallbackQuery({ text, show_alert: true })
+      : ctx.chat?.type === 'private'
+        ? ctx.reply(text)
+        : Promise.resolve()
+    ).catch(() => undefined);
+    await this.alertAdmins(error);
+  }
+
+  /**
+   * TZ 7 (monitoring): self-hosted muhitda Sentry o'rniga — adminlarga Telegram'da qisqa xabar.
+   * Daqiqasiga ko'pi bilan bitta (Redis SET NX), batafsili — log'da.
+   */
+  private async alertAdmins(error: unknown): Promise<void> {
+    const admins = this.config.get('ADMIN_TELEGRAM_IDS', { infer: true });
+    if (admins.length === 0) return;
+    const fresh = await this.redis.set('tg:alert:bot-error', '1', 'EX', 60, 'NX').catch(() => null);
+    if (fresh !== 'OK') return;
+    const message = error instanceof Error ? `${error.name}: ${error.message}` : String(error);
+    const text = `🚨 Botda kutilmagan xatolik:\n${message.slice(0, 500)}\n\nBatafsil — server log'ida.`;
+    for (const id of admins) await this.bot.api.sendMessage(id, text).catch(() => undefined);
   }
 
   private discoverFeatures(): BotFeature[] {
