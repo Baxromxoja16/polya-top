@@ -50,6 +50,16 @@ export class RenameUserUseCase extends UserCommand {
   }
 }
 
+/** TZ 4.6: Owner kunlik jadvalni o'chiradi/yoqadi */
+@Injectable()
+export class SetDailyScheduleUseCase extends UserCommand {
+  async execute(input: { telegramId: number; off: boolean }): Promise<User> {
+    const user = await this.load(input.telegramId);
+    if (user.setDailyScheduleOff(input.off, this.clock.now())) await this.users.save(user);
+    return user;
+  }
+}
+
 /** TZ MK-4: marketing xabarlarini o'chirish/yoqish */
 @Injectable()
 export class SetMarketingOptOutUseCase extends UserCommand {

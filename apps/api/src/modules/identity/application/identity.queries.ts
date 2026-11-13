@@ -12,6 +12,8 @@ export interface UserContactView {
   displayName: string | null;
   phone: string | null;
   botBlocked: boolean;
+  /** TZ 4.6 */
+  dailyScheduleOff: boolean;
 }
 
 @Injectable()
@@ -31,6 +33,7 @@ export class IdentityQueries {
       displayName: user.displayName,
       phone: user.phone?.value ?? null,
       botBlocked: user.botBlocked,
+      dailyScheduleOff: user.dailyScheduleOff,
     };
   }
 

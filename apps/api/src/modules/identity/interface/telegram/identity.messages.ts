@@ -5,6 +5,8 @@ export const identityMessages = defineMessages(
     chooseLanguage: 'Tilni tanlang · Выберите язык',
     languageName: "O'zbekcha",
     languageSaved: "✅ Til: O'zbekcha",
+    dailyOff: '🗓 Ertangi jadval endi yuborilmaydi',
+    dailyOn: '🗓 Ertangi jadval har kuni 21:00 da yuboriladi',
     accountBlocked:
       "⛔ Akkauntingiz qoidabuzarlik sababli bloklangan. Savollar bo'lsa, qo'llab-quvvatlash xizmatiga yozing.",
     welcomeNew: (name: string) =>
@@ -49,6 +51,8 @@ export const identityMessages = defineMessages(
     chooseLanguage: 'Tilni tanlang · Выберите язык',
     languageName: 'Русский',
     languageSaved: '✅ Язык: Русский',
+    dailyOff: '🗓 Расписание на завтра больше не присылается',
+    dailyOn: '🗓 Расписание на завтра приходит каждый день в 21:00',
     accountBlocked:
       '⛔ Ваш аккаунт заблокирован за нарушение правил. По вопросам обратитесь в поддержку.',
     welcomeNew: (name) =>

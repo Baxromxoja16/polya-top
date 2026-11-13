@@ -150,4 +150,22 @@ describe('Reminders, owner nudges and daily schedule (e2e): TZ 4.6, BK-3f', () =
     expect(text).toContain('🟢 19:00–20:00 · 1-maydon · Ali · +998 90 112 00 02');
     expect((await sweeper.run()).daily).toBe(0);
   });
+
+  it('TZ 4.6: the owner can turn the daily schedule off from the panel', async () => {
+    const off = await owner.press('id:daily:off');
+    expect(off.find((c) => c.method === 'answerCallbackQuery')?.payload.text).toContain(
+      'endi yuborilmaydi',
+    );
+    const kb = JSON.stringify(off.map((c) => c.payload.reply_markup));
+    expect(kb).toContain('id:daily:on');
+    // ertasi kun uchun yana bir o'yin, 21:00 dan keyin — jadval kelmaydi
+    const day2 = addDays(day, 1);
+    clock.set(zonedToUtc(day2, 10, TZ));
+    const sec2 = Math.floor(zonedToUtc(addDays(day2, 1), 18, TZ).getTime() / 1000);
+    await player.press(`bk:ok:${pitchId}:${sec2}:1`);
+    const req = await db.collection('bookings').findOne({ status: 'PENDING' });
+    await owner.press(`bk:c:${req?._id}`);
+    clock.set(zonedToUtc(day2, 21, TZ, 5));
+    expect((await sweeper.run()).daily).toBe(0);
+  });
 });

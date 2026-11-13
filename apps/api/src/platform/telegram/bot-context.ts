@@ -15,6 +15,8 @@ export interface CurrentUser {
   roles: readonly string[];
   /** TZ MK-4 */
   marketingOptOut: boolean;
+  /** TZ 4.6 */
+  dailyScheduleOff: boolean;
   /** Shu update'da yaratildi (birinchi /start). */
   isNew: boolean;
 }

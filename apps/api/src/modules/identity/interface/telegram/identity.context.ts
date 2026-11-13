@@ -20,6 +20,7 @@ export function toCurrentUser(user: User, isNew: boolean): CurrentUser {
     cityId: user.cityId,
     roles: user.roles,
     marketingOptOut: user.marketingOptOut,
+    dailyScheduleOff: user.dailyScheduleOff,
     isNew,
   };
 }

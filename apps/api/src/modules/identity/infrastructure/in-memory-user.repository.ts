@@ -72,6 +72,7 @@ function snapshot(user: User): UserProps {
     status: user.status,
     botBlocked: user.botBlocked,
     marketingOptOut: user.marketingOptOut,
+    dailyScheduleOff: user.dailyScheduleOff,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
   };

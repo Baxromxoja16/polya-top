@@ -43,6 +43,8 @@ export interface UserProps {
   botBlocked: boolean;
   /** TZ MK-4: marketing xabarlaridan voz kechgan (tranzaksion xabarlar bunga bog'liq emas, MK-1) */
   marketingOptOut: boolean;
+  /** TZ 4.6: Owner ertangi jadvalni (21:00) olmaslikni tanlagan */
+  dailyScheduleOff: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -82,6 +84,7 @@ export class User extends AggregateRoot<UserId> {
         status: 'ACTIVE',
         botBlocked: false,
         marketingOptOut: false,
+        dailyScheduleOff: false,
         createdAt: params.now,
         updatedAt: params.now,
       },
@@ -134,6 +137,9 @@ export class User extends AggregateRoot<UserId> {
   }
   get marketingOptOut(): boolean {
     return this.#props.marketingOptOut;
+  }
+  get dailyScheduleOff(): boolean {
+    return this.#props.dailyScheduleOff;
   }
   get createdAt(): Date {
     return this.#props.createdAt;
@@ -301,6 +307,14 @@ export class User extends AggregateRoot<UserId> {
   unblock(now: Date): boolean {
     if (this.#props.status === 'ACTIVE') return false;
     this.#props.status = 'ACTIVE';
+    this.touch(now);
+    return true;
+  }
+
+  /** TZ 4.6 */
+  setDailyScheduleOff(off: boolean, now: Date): boolean {
+    if (this.#props.dailyScheduleOff === off) return false;
+    this.#props.dailyScheduleOff = off;
     this.touch(now);
     return true;
   }

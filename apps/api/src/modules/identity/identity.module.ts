@@ -19,6 +19,7 @@ import {
   ChangeLanguageUseCase,
   RenameUserUseCase,
   SetBotBlockedUseCase,
+  SetDailyScheduleUseCase,
   SetMarketingOptOutUseCase,
   SetUserBlockedUseCase,
 } from './application/update-profile.use-cases.js';
@@ -38,6 +39,7 @@ import { USER_MODEL, UserSchema } from './infrastructure/user.schema.js';
 import { IdentityBotFeature } from './interface/telegram/identity.bot.js';
 import { IdentityContextFeature } from './interface/telegram/identity.context.js';
 import { OwnerApplicationBotFeature } from './interface/telegram/owner-application.bot.js';
+import { OwnerPreferencesBotFeature } from './interface/telegram/owner-preferences.bot.js';
 import { PhoneGate } from './interface/telegram/phone-gate.js';
 
 /** Identity bounded context (TZ 4.1): foydalanuvchi, telefon tasdiqlash, til, rollar. */
@@ -72,6 +74,8 @@ import { PhoneGate } from './interface/telegram/phone-gate.js';
     SetBotBlockedUseCase,
     SetMarketingOptOutUseCase,
     SetUserBlockedUseCase,
+    SetDailyScheduleUseCase,
+    OwnerPreferencesBotFeature,
     PhoneGate,
     IdentityContextFeature,
     IdentityBotFeature,

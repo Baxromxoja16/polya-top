@@ -176,6 +176,11 @@ export class OwnerOnboardingBotFeature implements BotFeature {
     if (venues.length)
       kb.text(m.btnPending, 'bk:own:pending').text(m.btnToday, 'bk:own:today').row();
     kb.text(m.btnAddVenue, 'cat:new');
+    // TZ 4.6: kunlik jadval sozlamasi — Identity (`id:daily:*`)
+    if (venues.length) {
+      const off = ctx.currentUser?.dailyScheduleOff ?? false;
+      kb.row().text(off ? m.btnDailyOff : m.btnDailyOn, off ? 'id:daily:on' : 'id:daily:off');
+    }
     await showMessage(ctx, venues.length ? m.panelTitle : `${m.panelTitle}\n\n${m.panelEmpty}`, kb);
   }
 

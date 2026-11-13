@@ -187,7 +187,8 @@ export class BookingSweeper implements OnApplicationBootstrap, OnApplicationShut
       );
       if (fresh !== 'OK') continue;
       const owner = await this.identity.contactOf(ownerId);
-      if (!owner) continue;
+      // TZ 4.6: Owner kunlik jadvalni o'chirgan
+      if (!owner || owner.dailyScheduleOff) continue;
       const lines: string[] = [];
       for (const b of list) {
         const c = contexts.get(b.pitchId);
