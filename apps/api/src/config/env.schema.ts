@@ -31,6 +31,9 @@ export const envSchema = z
     /** Tashqi HTTPS manzil, masalan https://api.polya.top — webhook shu yerga o'rnatiladi. */
     PUBLIC_URL: z.url({ protocol: /^https$/ }).optional(),
 
+    /** TZ ID-7: access token (JWT HS256) imzo kaliti. Produksiyada majburiy; lokalda berilmasa — har ishga tushishda tasodifiy. */
+    JWT_SECRET: z.string().min(32, 'At least 32 characters').optional(),
+
     /** TZ 4.6: `queue` — BullMQ navbati (rate limit, retry); `direct` — darhol (testlar, lokal). */
     NOTIFICATIONS_MODE: z.enum(['queue', 'direct']).default('queue'),
 
@@ -43,7 +46,6 @@ export const envSchema = z
     /** TZ EC-D4: foydalanuvchiga daqiqasiga update'lar limiti. 0 — o'chiq. */
     BOT_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(0).max(1000).default(30),
 
-    /** Platforma adminlari: vergul bilan ajratilgan Telegram ID'lar (TZ 3, 4.7). */
     /** TZ EC-R5: sharh filtri uchun qo'shimcha so'z o'zaklari, vergul bilan (asosiy ro'yxatga qo'shiladi) */
     PROFANITY_EXTRA: z
       .string()
@@ -55,6 +57,7 @@ export const envSchema = z
           .filter(Boolean),
       ),
 
+    /** Platforma adminlari: vergul bilan ajratilgan Telegram ID'lar (TZ 3, 4.7). */
     ADMIN_TELEGRAM_IDS: z
       .string()
       .default('')
@@ -81,6 +84,9 @@ export const envSchema = z
         path: ['TELEGRAM_BOT_TOKEN'],
         message: `Required when TELEGRAM_MODE=${env.TELEGRAM_MODE}`,
       });
+    }
+    if (env.NODE_ENV === 'production' && !env.JWT_SECRET) {
+      ctx.addIssue({ code: 'custom', path: ['JWT_SECRET'], message: 'Required in production' });
     }
     if (env.TELEGRAM_MODE === 'webhook') {
       for (const key of ['TELEGRAM_WEBHOOK_SECRET', 'PUBLIC_URL'] as const) {

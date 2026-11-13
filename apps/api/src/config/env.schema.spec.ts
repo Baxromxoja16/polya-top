@@ -36,6 +36,15 @@ describe('validateEnv', () => {
     );
   });
 
+  it('requires a long JWT_SECRET in production only', () => {
+    expect(validateEnv(valid).JWT_SECRET).toBeUndefined();
+    expect(() => validateEnv({ ...valid, NODE_ENV: 'production' })).toThrow(/JWT_SECRET/);
+    expect(() => validateEnv({ ...valid, JWT_SECRET: 'short' })).toThrow(/JWT_SECRET/);
+    expect(
+      validateEnv({ ...valid, NODE_ENV: 'production', JWT_SECRET: 's'.repeat(32) }).JWT_SECRET,
+    ).toHaveLength(32);
+  });
+
   describe('Telegram', () => {
     const token = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw1';
 
