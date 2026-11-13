@@ -13,6 +13,11 @@ export class BookingQueries {
     private readonly clock: Clock,
   ) {}
 
+  /** TZ AD-4 */
+  countsSince(since: Date): Promise<Partial<Record<string, number>>> {
+    return this.store.countByStatusSince(since);
+  }
+
   byId(id: string): Promise<Booking | null> {
     return this.store.findById(id as BookingId);
   }

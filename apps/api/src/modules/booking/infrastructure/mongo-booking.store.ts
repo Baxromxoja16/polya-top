@@ -37,6 +37,16 @@ export class MongoBookingStore extends BookingStore implements OnModuleInit {
     super();
   }
 
+  async countByStatusSince(since: Date): Promise<Partial<Record<string, number>>> {
+    const rows = await this.bookings
+      .aggregate<{ _id: string; n: number }>([
+        { $match: { createdAt: { $gte: since } } },
+        { $group: { _id: '$status', n: { $sum: 1 } } },
+      ])
+      .exec();
+    return Object.fromEntries(rows.map((r) => [r._id, r.n]));
+  }
+
   async onModuleInit(): Promise<void> {
     await Promise.all([
       this.bookings.createIndexes(),

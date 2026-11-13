@@ -36,6 +36,8 @@ export abstract class VenueRepository {
   /** TZ EC-B18: shu shaharda bir xil normallashtirilgan nomli stadionlar */
   abstract findSameName(cityId: string, name: string, excludeId?: VenueId): Promise<Venue[]>;
   abstract save(venue: Venue): Promise<void>;
+  /** TZ AD-4 */
+  abstract countByStatus(): Promise<Partial<Record<string, number>>>;
 }
 
 export abstract class PitchRepository {

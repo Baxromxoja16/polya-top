@@ -56,6 +56,16 @@ export class MongoVenueRepository extends VenueRepository implements OnModuleIni
     return this.many({ status: 'PENDING_REVIEW' }, { updatedAt: 1 });
   }
 
+  async countByStatus(): Promise<Partial<Record<string, number>>> {
+    const rows = await this.model
+      .aggregate<{ _id: string; n: number }>([
+        { $match: {} },
+        { $group: { _id: '$status', n: { $sum: 1 } } },
+      ])
+      .exec();
+    return Object.fromEntries(rows.map((r) => [r._id, r.n]));
+  }
+
   async listApprovedSince(since: Date): Promise<Venue[]> {
     return this.many({ status: 'APPROVED', approvedAt: { $gte: since } }, { approvedAt: 1 });
   }

@@ -24,6 +24,8 @@ export interface PitchOccupancyView {
  */
 export abstract class BookingStore {
   abstract findById(id: BookingId): Promise<Booking | null>;
+  /** TZ AD-4: shu vaqtdan keyin yaratilganlar, holat bo'yicha */
+  abstract countByStatusSince(since: Date): Promise<Partial<Record<string, number>>>;
   abstract findByCode(code: string): Promise<Booking | null>;
   /** PENDING + CONFIRMED, vaqti kesishadigan */
   abstract findActiveOverlapping(pitchId: string, range: TimeRange): Promise<Booking[]>;

@@ -30,6 +30,10 @@ const HELP = [
   '',
   '/pending — tasdiqlanmagan stadionlar',
   '/premium <slug> [kun] — obuna holati / PREMIUM uzaytirish',
+  '/reviews — shikoyat qilingan sharhlar',
+  '/stats — statistika',
+  '/blockuser <ID yoki +998…> | sabab · /unblockuser',
+  '/blockvenue <slug> | sabab · /unblockvenue',
 ].join('\n');
 
 /**

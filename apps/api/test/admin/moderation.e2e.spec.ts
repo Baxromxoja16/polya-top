@@ -177,4 +177,15 @@ describe('Admin moderation (e2e): TZ AD-2, EC-B10, EC-B11', () => {
     ]);
     expect((await db.collection('venues').findOne())?.status).toBe('APPROVED');
   });
+
+  it('AD-4: /stats shows users, venues and the booking funnel', async () => {
+    const text = texts(await u(ADMIN).send('/stats'))[0] ?? '';
+    expect(text).toContain('📊 Polya.top statistikasi');
+    expect(text).toContain('👥 Foydalanuvchilar: 4');
+    expect(text).toContain('Owner: 1');
+    expect(text).toContain('🏟 Stadionlar: ✅ 1');
+    // ikkala blok natijasida uchala bandlov ham bekor qilingan
+    expect(text).toContain("📅 24 soat: so'rov 3 · ✅ 0 · ❌ 0 · ⌛ 0 · 🚫 3");
+    expect(texts(await u(OWNER).send('/stats')).join()).not.toContain('📊');
+  });
 });

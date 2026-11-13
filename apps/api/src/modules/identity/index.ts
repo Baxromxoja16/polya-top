@@ -8,5 +8,6 @@ export {
   type BlockUserError,
   SetUserBlockedUseCase,
 } from './application/update-profile.use-cases.js';
+export { type UserCounts, UserStatistics } from './application/user-statistics.js';
 export { IdentityModule } from './identity.module.js';
 export { PhoneGate } from './interface/telegram/phone-gate.js';

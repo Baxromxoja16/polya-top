@@ -22,6 +22,7 @@ import {
   SetMarketingOptOutUseCase,
   SetUserBlockedUseCase,
 } from './application/update-profile.use-cases.js';
+import { UserStatistics } from './application/user-statistics.js';
 import { OwnerApplicationRepository } from './domain/owner-application.js';
 import { UserRepository } from './domain/user.repository.js';
 import { GeographyCityCatalog } from './infrastructure/geography-city-catalog.js';
@@ -32,6 +33,7 @@ import {
   OwnerApplicationSchema,
 } from './infrastructure/mongo-owner-application.repository.js';
 import { MongoUserRepository } from './infrastructure/mongo-user.repository.js';
+import { MongoUserStatistics } from './infrastructure/mongo-user-statistics.js';
 import { USER_MODEL, UserSchema } from './infrastructure/user.schema.js';
 import { IdentityBotFeature } from './interface/telegram/identity.bot.js';
 import { IdentityContextFeature } from './interface/telegram/identity.context.js';
@@ -62,6 +64,7 @@ import { PhoneGate } from './interface/telegram/phone-gate.js';
     EnsureUserUseCase,
     IdentityQueries,
     { provide: MarketingAudience, useClass: MongoMarketingAudience },
+    { provide: UserStatistics, useClass: MongoUserStatistics },
     ChangeCityUseCase,
     ShareContactUseCase,
     ChangeLanguageUseCase,
@@ -74,7 +77,7 @@ import { PhoneGate } from './interface/telegram/phone-gate.js';
     IdentityBotFeature,
     OwnerApplicationBotFeature,
   ],
-  exports: [PhoneGate, IdentityQueries, MarketingAudience, SetUserBlockedUseCase],
+  exports: [PhoneGate, IdentityQueries, MarketingAudience, SetUserBlockedUseCase, UserStatistics],
 })
 export class IdentityModule implements OnModuleInit {
   constructor(

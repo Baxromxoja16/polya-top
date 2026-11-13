@@ -176,6 +176,11 @@ export class CatalogQueries {
     return this.venues.listByOwner(ownerId);
   }
 
+  /** TZ AD-4 */
+  venueCounts(): Promise<Partial<Record<string, number>>> {
+    return this.venues.countByStatus();
+  }
+
   /** MK-5 */
   async approvedSince(since: Date): Promise<Venue[]> {
     return this.venues.listApprovedSince(since);
