@@ -44,6 +44,17 @@ export const envSchema = z
     BOT_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(0).max(1000).default(30),
 
     /** Platforma adminlari: vergul bilan ajratilgan Telegram ID'lar (TZ 3, 4.7). */
+    /** TZ EC-R5: sharh filtri uchun qo'shimcha so'z o'zaklari, vergul bilan (asosiy ro'yxatga qo'shiladi) */
+    PROFANITY_EXTRA: z
+      .string()
+      .default('')
+      .transform((raw) =>
+        raw
+          .split(',')
+          .map((w) => w.trim())
+          .filter(Boolean),
+      ),
+
     ADMIN_TELEGRAM_IDS: z
       .string()
       .default('')

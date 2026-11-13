@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  configureProfanity,
   InvalidReviewError,
   needsModeration,
   Review,
@@ -38,6 +39,20 @@ describe('Review (TZ 4.5)', () => {
     expect(needsModeration(text)).toBe(true);
     const r = create(text);
     expect(r).toMatchObject({ status: 'HIDDEN', hiddenReason: 'AUTO_FILTER' });
+  });
+
+  it('Cyrillic words are caught at the start of the text too; innocent words are not', () => {
+    expect(needsModeration('Тупой хозяин')).toBe(true);
+    expect(needsModeration('сукачев')).toBe(true); // o'zak + qo'shimcha
+    expect(needsModeration('Отличное поле, рекомендую')).toBe(false);
+    expect(needsModeration("Zo'r maydon, egasi axmoqona gapirdi")).toBe(true);
+  });
+
+  it('extra stems can be configured', () => {
+    expect(needsModeration('bu yaramas joy')).toBe(false);
+    configureProfanity(['yaramas']);
+    expect(needsModeration('bu yaramas joy')).toBe(true);
+    configureProfanity([]);
   });
 
   it('RV-4: the author edits within 7 days; edits are filtered too', () => {

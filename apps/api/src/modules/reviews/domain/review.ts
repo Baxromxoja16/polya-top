@@ -37,11 +37,44 @@ export const REPORTS_TO_HIDE = 3;
 
 // EC-R5: telefon raqam, havola, @username — moderatsiyaga
 const CONTACT_OR_LINK = /(https?:\/\/|www\.|t\.me\/|@\w{4,}|\+?\d[\d\s()-]{8,}\d)/i;
-// Qisqa, kengaytiriladigan ro'yxat (uz/ru); to'liq lug'at — konfiguratsiyada (7-bosqich)
-const PROFANITY = /\b(xuy|хуй|бля|сука|пизд|ахмоқ|axmoq|tupoy|тупой|jalab|жалаб)\w*/i;
+/** Asosiy ro'yxat (uz/ru, lotin va kirill o'zaklari). Qo'shimchalari — `PROFANITY_EXTRA` (env). */
+export const DEFAULT_PROFANITY = [
+  'xuy',
+  'хуй',
+  'бля',
+  'сука',
+  'пизд',
+  'ахмоқ',
+  'axmoq',
+  'tupoy',
+  'тупой',
+  'jalab',
+  'жалаб',
+] as const;
+
+const escapeRegExp = (w: string) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * So'z boshida keladigan o'zak (keyin har qanday qo'shimcha). `\b` kirillni so'z harfi deb
+ * bilmaydi — shuning uchun Unicode harf/raqam bo'yicha chegara (`u` flag).
+ */
+function compile(stems: readonly string[]): RegExp {
+  const alt = stems
+    .map((w) => escape(w.trim().toLowerCase()))
+    .filter(Boolean)
+    .join('|');
+  return new RegExp(`(?<![\\p{L}\\p{N}])(?:${alt})`, 'iu');
+}
+
+let profanity = compile(DEFAULT_PROFANITY);
+
+/** Ilova ishga tushganda konfiguratsiyadan qo'shimcha o'zaklar (ReviewsModule) */
+export function configureProfanity(extra: readonly string[]): void {
+  profanity = compile([...DEFAULT_PROFANITY, ...extra]);
+}
 
 export function needsModeration(text: string | null): boolean {
-  return text !== null && (CONTACT_OR_LINK.test(text) || PROFANITY.test(text));
+  return text !== null && (CONTACT_OR_LINK.test(text) || profanity.test(text));
 }
 
 /**

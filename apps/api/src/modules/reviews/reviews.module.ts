@@ -1,12 +1,14 @@
-import { Module } from '@nestjs/common';
+import { Module, type OnModuleInit } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import type { Env } from '../../config/env.schema.js';
 import { BookingModule } from '../booking/index.js';
 import { CatalogModule } from '../catalog/index.js';
 import { IdentityModule } from '../identity/index.js';
 import { ConditionService } from './application/condition.service.js';
 import { ReviewService } from './application/review.service.js';
 import { ConditionStore } from './domain/condition.js';
-import { ReviewStore } from './domain/review.js';
+import { configureProfanity, ReviewStore } from './domain/review.js';
 import {
   CONDITION_MODEL,
   ConditionSchema,
@@ -41,4 +43,11 @@ import { ReviewsBotFeature } from './interface/telegram/reviews.bot.js';
   ],
   exports: [ReviewService, ReviewInviter],
 })
-export class ReviewsModule {}
+export class ReviewsModule implements OnModuleInit {
+  constructor(private readonly config: ConfigService<Env, true>) {}
+
+  /** EC-R5: so'kinish ro'yxati konfiguratsiyadan kengaytiriladi */
+  onModuleInit(): void {
+    configureProfanity(this.config.get('PROFANITY_EXTRA', { infer: true }));
+  }
+}
