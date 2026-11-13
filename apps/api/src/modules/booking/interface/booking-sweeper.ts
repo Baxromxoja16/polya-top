@@ -141,26 +141,30 @@ export class BookingSweeper implements OnApplicationBootstrap, OnApplicationShut
   /** TZ BK-3f: muddati tugashiga oz qolgan so'rov — Owner'ga tugmalar bilan qayta */
   private async nudgeOwner(b: Booking): Promise<boolean> {
     const c = await this.catalog.pitchContext(b.pitchId);
-    const owner = c ? await this.identity.contactOf(c.venue.ownerId) : null;
-    if (!c || !owner) return false;
+    if (!c) return false;
+    // TZ 4.6: Owner + Staff
+    const managers = (
+      await Promise.all(
+        [c.venue.ownerId, ...c.venue.staffIds].map((id) => this.identity.contactOf(id)),
+      )
+    ).filter((m) => m !== null);
+    if (managers.length === 0) return false;
     const player = b.playerId ? await this.identity.contactOf(b.playerId) : null;
     const minutes = Math.max(
       1,
       Math.round(((b.expiresAt?.getTime() ?? 0) - this.clock.now().getTime()) / 60_000),
     );
-    await this.messenger.send(
-      owner.telegramId,
-      ownerText.nudge({
-        venue: c.venue.name,
-        when: formatRange(b.range, c.timeZone, 'uz'),
-        name: player?.displayName ?? '—',
-        phone: player?.phone ? PhoneNumber.parse(player.phone).format() : '—',
-        minutes,
-      }),
-      new InlineKeyboard()
-        .text('✅ Tasdiqlash', `bk:c:${b.id}`)
-        .text('❌ Rad etish', `bk:r:${b.id}`),
-    );
+    const text = ownerText.nudge({
+      venue: c.venue.name,
+      when: formatRange(b.range, c.timeZone, 'uz'),
+      name: player?.displayName ?? '—',
+      phone: player?.phone ? PhoneNumber.parse(player.phone).format() : '—',
+      minutes,
+    });
+    const kb = new InlineKeyboard()
+      .text('✅ Tasdiqlash', `bk:c:${b.id}`)
+      .text('❌ Rad etish', `bk:r:${b.id}`);
+    for (const m of managers) await this.messenger.send(m.telegramId, text, kb);
     return true;
   }
 

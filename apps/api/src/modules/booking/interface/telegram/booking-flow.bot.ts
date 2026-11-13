@@ -180,8 +180,13 @@ export class BookingFlowBotFeature implements BotFeature {
     queue: Booking[],
     context: PitchContext,
   ): Promise<void> {
-    const owner = await this.identity.contactOf(context.venue.ownerId);
-    if (!owner) return;
+    // TZ 4.6: Owner + barcha Staff
+    const managers = (
+      await Promise.all(
+        [context.venue.ownerId, ...context.venue.staffIds].map((id) => this.identity.contactOf(id)),
+      )
+    ).filter((c) => c !== null);
+    if (managers.length === 0) return;
     let text = ownerText.newRequest({
       venue: context.venue.name,
       pitch: context.pitchName,
@@ -206,7 +211,7 @@ export class BookingFlowBotFeature implements BotFeature {
 ${await this.reputationLine(booking)}`;
       kb.text('✅ Tasdiqlash', `bk:c:${booking.id}`).text('❌ Rad etish', `bk:r:${booking.id}`);
     }
-    await this.messenger.send(owner.telegramId, text, kb);
+    for (const m of managers) await this.messenger.send(m.telegramId, text, kb);
   }
 
   private async decide(

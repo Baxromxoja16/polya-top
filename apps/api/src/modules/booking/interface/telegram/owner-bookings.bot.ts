@@ -113,7 +113,10 @@ export class OwnerBookingsBotFeature implements BotFeature {
   ) {}
 
   register(bot: Composer<BotContext>): void {
-    const owner = bot.filter((ctx) => hasRole(ctx, 'OWNER') || hasRole(ctx, 'ADMIN'));
+    // TZ 3: Staff ham bandlovlarni boshqaradi (resurs darajasida tekshiriladi)
+    const owner = bot.filter(
+      (ctx) => hasRole(ctx, 'OWNER') || hasRole(ctx, 'STAFF') || hasRole(ctx, 'ADMIN'),
+    );
 
     owner.callbackQuery('bk:own:pending', (ctx) => this.ack(ctx, () => this.pending(ctx)));
     owner.callbackQuery('bk:own:today', (ctx) => this.ack(ctx, () => this.today(ctx)));
@@ -233,7 +236,7 @@ export class OwnerBookingsBotFeature implements BotFeature {
 
   private async pending(ctx: BotContext): Promise<void> {
     const t = m[ctx.lang];
-    const venues = await this.catalog.ownerVenues(ctx.currentUser?.id ?? '');
+    const venues = await this.catalog.managedVenues(ctx.currentUser?.id ?? '');
     const pending = await this.queries.pendingForVenues(venues.map((v) => v.id));
     if (pending.length === 0) return void (await showMessage(ctx, t.pendingEmpty));
     const contexts = await this.catalog.pitchContexts(pending.map((b) => b.pitchId));
@@ -255,7 +258,7 @@ export class OwnerBookingsBotFeature implements BotFeature {
   /** TZ BK-13 */
   private async today(ctx: BotContext): Promise<void> {
     const t = m[ctx.lang];
-    const venues = await this.catalog.ownerVenues(ctx.currentUser?.id ?? '');
+    const venues = await this.catalog.managedVenues(ctx.currentUser?.id ?? '');
     const tz = venues[0] ? await this.catalog.timeZoneOf(venues[0].cityId) : 'Asia/Tashkent';
     const today = zonedParts(this.clock.now(), tz).date;
     const from = zonedToUtc(today, 0, tz);
@@ -419,7 +422,10 @@ export class OwnerBookingsBotFeature implements BotFeature {
   /** Faqat o'z stadioni (TZ EC-D1) */
   private async context(ctx: BotContext, pitchId: string): Promise<PitchContext | null> {
     const c = await this.catalog.pitchContext(pitchId);
-    if (!c || (c.venue.ownerId !== ctx.currentUser?.id && !hasRole(ctx, 'ADMIN'))) return null;
+    const me = ctx.currentUser?.id ?? '';
+    const allowed =
+      c && (c.venue.ownerId === me || c.venue.staffIds.includes(me) || hasRole(ctx, 'ADMIN'));
+    if (!c || !allowed) return null;
     return c;
   }
 

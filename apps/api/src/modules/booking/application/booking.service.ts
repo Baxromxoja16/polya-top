@@ -546,7 +546,11 @@ export class BookingService {
   }
 }
 
-/** TZ 3: Owner (va keyin Staff) faqat o'z stadionini boshqaradi; Admin — hammasini */
+/** TZ 3: Owner va uning xodimlari faqat o'z stadionini boshqaradi; Admin — hammasini (EC-D1) */
 export function canManage(actor: BookingActor, context: PitchContext): boolean {
-  return context.venue.ownerId === actor.userId || actor.roles.includes('ADMIN');
+  return (
+    context.venue.ownerId === actor.userId ||
+    context.venue.staffIds.includes(actor.userId) ||
+    actor.roles.includes('ADMIN')
+  );
 }
