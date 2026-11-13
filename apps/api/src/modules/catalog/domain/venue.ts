@@ -249,6 +249,11 @@ export class Venue extends AggregateRoot<VenueId> {
     this.transition(['APPROVED', 'PENDING_REVIEW', 'REJECTED', 'ARCHIVED'], 'BLOCKED', now);
   }
 
+  /** TZ AD-2: blokdan chiqarish — avval tasdiqlangan bo'lsa ommaga qaytadi, aks holda qayta ko'rikka */
+  unblock(now: Date): void {
+    this.transition(['BLOCKED'], this.#p.approvedAt ? 'APPROVED' : 'PENDING_REVIEW', now);
+  }
+
   rename(name: string, now: Date): void {
     this.#p.name = validName(name);
     this.touch(now);

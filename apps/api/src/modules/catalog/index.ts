@@ -1,4 +1,6 @@
 /** Catalog kontekstining ochiq API'si. */
+
+export type { Actor } from './application/actor.js';
 export {
   CatalogQueries,
   type PitchCardView,
@@ -6,6 +8,7 @@ export {
   type VenueListItem,
 } from './application/catalog.queries.js';
 export type { PitchContext } from './application/pitch-context.js';
+export { VenueManagementService } from './application/venue-management.service.js';
 export { VenueRatingUpdater } from './application/venue-rating.updater.js';
 export { CatalogModule } from './catalog.module.js';
 export type { PitchId } from './domain/pitch.js';

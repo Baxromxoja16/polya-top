@@ -68,6 +68,6 @@ import {
     VenueDeepLinkBotFeature,
     PremiumReminder,
   ],
-  exports: [CatalogQueries, VenueRatingUpdater, PremiumReminder],
+  exports: [CatalogQueries, VenueRatingUpdater, PremiumReminder, VenueManagementService],
 })
 export class CatalogModule {}

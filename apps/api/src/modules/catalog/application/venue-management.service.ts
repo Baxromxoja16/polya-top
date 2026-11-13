@@ -76,6 +76,15 @@ export class VenueManagementService {
     return venue;
   }
 
+  /** TZ AD-2, EC-B10: bandlovlarni bekor qilishni chaqiruvchi (Admin konteksti) bajaradi */
+  async setBlocked(actor: Actor, venueId: VenueId, blocked: boolean): Promise<Venue> {
+    const venue = await this.loadForAdmin(actor, venueId);
+    if (blocked) venue.block(this.clock.now());
+    else venue.unblock(this.clock.now());
+    await this.venues.save(venue);
+    return venue;
+  }
+
   async reject(actor: Actor, venueId: VenueId, reason: string | null): Promise<Venue> {
     const venue = await this.loadForAdmin(actor, venueId);
     venue.reject(reason, this.clock.now());
