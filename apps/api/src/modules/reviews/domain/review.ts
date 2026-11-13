@@ -60,7 +60,7 @@ const escapeRegExp = (w: string) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
  */
 function compile(stems: readonly string[]): RegExp {
   const alt = stems
-    .map((w) => escape(w.trim().toLowerCase()))
+    .map((w) => escapeRegExp(w.trim().toLowerCase()))
     .filter(Boolean)
     .join('|');
   return new RegExp(`(?<![\\p{L}\\p{N}])(?:${alt})`, 'iu');
