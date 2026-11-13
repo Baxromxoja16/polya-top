@@ -11,6 +11,35 @@ export {
   tokenPairSchema,
 } from './auth.js';
 export {
+  AMENITIES,
+  type CityDto,
+  cityDtoSchema,
+  PITCH_FORMATS,
+  type PitchDto,
+  pitchDtoSchema,
+  SURFACES,
+  type VenueCardDto,
+  type VenueListItemDto,
+  type VenueSearchQuery,
+  type VenueSearchResponse,
+  venueCardSchema,
+  venueListItemSchema,
+  venueSearchQuerySchema,
+  venueSearchResponseSchema,
+} from './catalog.js';
+export {
+  type GeoPointDto,
+  geoPointSchema,
+  type LocalizedTextDto,
+  localDateSchema,
+  localizedTextSchema,
+  type MoneyDto,
+  moneySchema,
+  objectIdSchema,
+  pageOf,
+  pageQuerySchema,
+} from './common.js';
+export {
   PROBLEM_JSON_CONTENT_TYPE,
   type ProblemDetails,
   problemDetailsSchema,
