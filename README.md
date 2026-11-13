@@ -55,6 +55,17 @@ docs/                     TZ va ADR'lar
 
 Polling rejimida ochiq URL kerak emas. Produksiyada `TELEGRAM_MODE=webhook`, `TELEGRAM_WEBHOOK_SECRET` va `PUBLIC_URL` (https) ishlatiladi. Bot arxitekturasi: [ADR-0005](docs/adr/0005-telegram-bot-architecture.md).
 
+## Zaxira nusxa (backup)
+
+```bash
+scripts/backup-mongo.sh                       # ./backups/polya-<vaqt>.archive.gz, 14 kun saqlanadi
+BACKUP_DIR=/srv/backups BACKUP_KEEP_DAYS=30 scripts/backup-mongo.sh
+scripts/restore-mongo.sh backups/polya-<vaqt>.archive.gz   # tasdiq so'raydi, --drop
+```
+
+Serverda cron bilan har kuni: `15 3 * * * /opt/polya/scripts/backup-mongo.sh >> /var/log/polya-backup.log 2>&1`.
+Nusxalarni boshqa diskka/serverga ham ko'chiring (bitta diskdagi zaxira — zaxira emas).
+
 ## Endpointlar
 - `GET /health/live` — liveness (process tirikmi)
 - `GET /health` — readiness (Mongo + Redis)
