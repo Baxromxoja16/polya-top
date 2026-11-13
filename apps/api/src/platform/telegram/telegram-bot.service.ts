@@ -14,7 +14,7 @@ import { REDIS } from '../redis/redis.module.js';
 import type { BotContext, SessionData } from './bot-context.js';
 import { BOT_FEATURE_ORDER, type BotFeature } from './bot-feature.js';
 import { coreMessages } from './core.messages.js';
-import { dedupUpdates, defaultLanguage } from './middlewares.js';
+import { dedupUpdates, defaultLanguage, rateLimit } from './middlewares.js';
 import { RedisSessionStorage } from './redis-session.storage.js';
 import {
   ALLOWED_UPDATES,
@@ -59,6 +59,7 @@ export class TelegramBotService implements OnApplicationBootstrap, OnApplication
 
     bot.use(dedupUpdates(this.redis));
     bot.use(defaultLanguage);
+    bot.use(rateLimit(this.redis, this.config.get('BOT_RATE_LIMIT_PER_MINUTE', { infer: true })));
 
     // TZ EC-T8: MVP faqat shaxsiy chatda. Guruhda faqat /start ga yo'riqnoma, qolgani jim.
     const nonPrivate = bot.filter((ctx) => ctx.chat !== undefined && ctx.chat.type !== 'private');

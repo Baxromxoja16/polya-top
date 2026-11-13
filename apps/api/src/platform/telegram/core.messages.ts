@@ -11,6 +11,7 @@ export const coreMessages = defineMessages(
     error: "Kutilmagan xatolik yuz berdi. Birozdan keyin qayta urinib ko'ring.",
     cancel: '❌ Bekor qilish',
     cancelled: 'Bekor qilindi.',
+    tooFast: '⏳ Juda tez yozyapsiz. Bir daqiqadan keyin davom eting.',
   },
   {
     mainMenu: 'Главное меню 👇',
@@ -22,6 +23,7 @@ export const coreMessages = defineMessages(
     error: 'Произошла непредвиденная ошибка. Попробуйте немного позже.',
     cancel: '❌ Отмена',
     cancelled: 'Отменено.',
+    tooFast: '⏳ Слишком много запросов. Продолжите через минуту.',
   },
 );
 

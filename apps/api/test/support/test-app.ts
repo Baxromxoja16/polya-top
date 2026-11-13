@@ -56,6 +56,7 @@ export async function createTestApp(
     LOG_LEVEL: 'silent',
     BOOKING_SWEEP_SECONDS: '0',
     MARKETING_TICK_SECONDS: '0',
+    BOT_RATE_LIMIT_PER_MINUTE: '0',
     NOTIFICATIONS_MODE: 'direct',
     ...env,
   });

@@ -40,6 +40,9 @@ export const envSchema = z
     /** TZ 4.6.1: marketing kampaniyalari tekshiruvi oralig'i. 0 — o'chiq. */
     MARKETING_TICK_SECONDS: z.coerce.number().int().min(0).max(3600).default(60),
 
+    /** TZ EC-D4: foydalanuvchiga daqiqasiga update'lar limiti. 0 — o'chiq. */
+    BOT_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(0).max(1000).default(30),
+
     /** Platforma adminlari: vergul bilan ajratilgan Telegram ID'lar (TZ 3, 4.7). */
     ADMIN_TELEGRAM_IDS: z
       .string()
