@@ -90,6 +90,35 @@ describe('Web auth (e2e): TZ ID-7 initData → JWT', () => {
     expect(code(await post('/auth/refresh', { refreshToken: rotated }))).toBe('REFRESH_INVALID');
   });
 
+  it('parallel reuse of one refresh token kills the whole family (stolen-token race)', async () => {
+    const pair = await webLogin(app, BOB);
+    const results = await Promise.all(
+      Array.from({ length: 5 }, () => post('/auth/refresh', { refreshToken: pair.refreshToken })),
+    );
+    // Hech kim (na o'g'ri, na egasi) bu oiladan yangi uzoq muddatli sessiya olib qololmaydi
+    for (const r of results.filter((x) => x.statusCode === 200)) {
+      const next = r.json<{ refreshToken: string }>().refreshToken;
+      expect(code(await post('/auth/refresh', { refreshToken: next }))).toBe('REFRESH_INVALID');
+    }
+    expect(
+      results.filter((r) => r.statusCode !== 200).every((r) => code(r) === 'REFRESH_INVALID'),
+    ).toBe(true);
+  });
+
+  it('a refresh racing with logout cannot resurrect the session', async () => {
+    for (let i = 0; i < 5; i++) {
+      const pair = await webLogin(app, ALICE);
+      const [, refreshed] = await Promise.all([
+        post('/auth/logout', {}, bearer(pair)),
+        post('/auth/refresh', { refreshToken: pair.refreshToken }),
+      ]);
+      if (refreshed.statusCode === 200) {
+        const next = refreshed.json<{ refreshToken: string }>().refreshToken;
+        expect(code(await post('/auth/refresh', { refreshToken: next }))).toBe('REFRESH_INVALID');
+      }
+    }
+  });
+
   it('logout revokes every session of the user', async () => {
     const a = await webLogin(app, ALICE);
     const b = await webLogin(app, ALICE);

@@ -83,7 +83,11 @@ export class AuthController {
       });
     }
     const user = await guard(() => this.sessions.activeUser(owner.userId));
-    return this.issue(user, await this.refreshTokens.issue(user.id, owner.family));
+    const next = await this.refreshTokens.rotate(user.id, owner.family);
+    if (!next) {
+      throw new UnauthorizedException({ code: 'REFRESH_INVALID', message: 'Session was revoked' });
+    }
+    return this.issue(user, next);
   }
 
   /** Barcha qurilmalardan chiqish */
