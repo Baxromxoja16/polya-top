@@ -17,6 +17,15 @@ export class HealthController {
     return this.health.check([]);
   }
 
+  /**
+   * Keep-alive nishoni: eng yengil javob, bog'liqliklarga tegmaydi.
+   * `KeepAlive` servisi o'zini tashqi URL orqali shu yerga chaqiradi (Render free uxlab qolmasin).
+   */
+  @Get('ping')
+  ping() {
+    return { status: 'ok', uptimeSeconds: Math.round(process.uptime()) };
+  }
+
   /** Readiness: Mongo va Redis'ga ulanish bormi. Load balancer trafik yuborish qarori uchun. */
   @Get()
   @HealthCheck()

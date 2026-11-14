@@ -31,6 +31,12 @@ export const envSchema = z
     /** Tashqi HTTPS manzil, masalan https://api.polya.top — webhook shu yerga o'rnatiladi. */
     PUBLIC_URL: z.url({ protocol: /^https$/ }).optional(),
 
+    /**
+     * Keep-alive: har N daqiqada `${PUBLIC_URL}/health/ping`ga tashqaridan so'rov yuboradi.
+     * Render free tarifi 15 daqiqa kiruvchi trafik bo'lmasa servisni uxlatadi — 10–14 qo'ying. 0 — o'chiq.
+     */
+    KEEP_ALIVE_MINUTES: z.coerce.number().int().min(0).max(60).default(0),
+
     /** TZ ID-7: access token (JWT HS256) imzo kaliti. Produksiyada majburiy; lokalda berilmasa — har ishga tushishda tasodifiy. */
     JWT_SECRET: z.string().min(32, 'At least 32 characters').optional(),
 
@@ -110,8 +116,17 @@ export class InvalidEnvironmentError extends Error {
   override readonly name = 'InvalidEnvironmentError';
 }
 
+/**
+ * Render har bir web servisga `RENDER_EXTERNAL_URL` (https://<nom>.onrender.com) beradi.
+ * `PUBLIC_URL` berilmagan bo'lsa shu ishlatiladi — birinchi deploy'dayoq webhook va keep-alive ishlaydi.
+ */
+function withPlatformDefaults(raw: Record<string, unknown>): Record<string, unknown> {
+  if (raw.PUBLIC_URL || !raw.RENDER_EXTERNAL_URL) return raw;
+  return { ...raw, PUBLIC_URL: raw.RENDER_EXTERNAL_URL };
+}
+
 export function validateEnv(raw: Record<string, unknown>): Env {
-  const result = envSchema.safeParse(raw);
+  const result = envSchema.safeParse(withPlatformDefaults(raw));
   if (!result.success) {
     throw new InvalidEnvironmentError(
       `Invalid environment configuration:\n${z.prettifyError(result.error)}`,

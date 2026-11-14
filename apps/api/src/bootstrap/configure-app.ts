@@ -18,6 +18,7 @@ export function configureApp(app: NestFastifyApplication): NestFastifyApplicatio
     exclude: [
       { path: 'health', method: RequestMethod.GET },
       { path: 'health/live', method: RequestMethod.GET },
+      { path: 'health/ping', method: RequestMethod.GET },
     ],
   });
   app.useGlobalFilters(new ProblemDetailsFilter());

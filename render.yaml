@@ -1,0 +1,50 @@
+# Render Blueprint — free tarif (demo / staging). Qo'llanma: docs/deploy-render.md
+# Render Dashboard → New → Blueprint → shu repo. `sync: false` qiymatlarini Render birinchi marta so'raydi.
+# MongoDB Render'da yo'q — MongoDB Atlas (M0, bepul) ishlatiladi.
+
+services:
+  - type: web
+    name: polya-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: main
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: info
+      # PORT va RENDER_EXTERNAL_URL'ni Render o'zi beradi; PUBLIC_URL bo'sh bo'lsa RENDER_EXTERNAL_URL olinadi
+      - key: MONGO_URI
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: polya-redis
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: TELEGRAM_MODE
+        value: webhook
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      # 32-256 belgi, faqat A-Z a-z 0-9 _ -  →  openssl rand -hex 32
+      - key: TELEGRAM_WEBHOOK_SECRET
+        sync: false
+      - key: ADMIN_TELEGRAM_IDS
+        sync: false
+      # Free tarif 15 daqiqa trafiksiz uxlaydi — servis o'zini har 10 daqiqada chaqiradi
+      - key: KEEP_ALIVE_MINUTES
+        value: "10"
+
+  - type: keyvalue
+    name: polya-redis
+    plan: free
+    region: frankfurt
+    # BullMQ uchun shart: navbatdagi job'lar xotira to'lsa o'chirilmasin
+    maxmemoryPolicy: noeviction
+    # Faqat Render ichki tarmog'idan ulanish
+    ipAllowList: []

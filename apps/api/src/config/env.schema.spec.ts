@@ -45,6 +45,30 @@ describe('validateEnv', () => {
     ).toHaveLength(32);
   });
 
+  describe('Render', () => {
+    it('falls back to RENDER_EXTERNAL_URL for PUBLIC_URL', () => {
+      const env = validateEnv({ ...valid, RENDER_EXTERNAL_URL: 'https://polya.onrender.com' });
+      expect(env.PUBLIC_URL).toBe('https://polya.onrender.com');
+    });
+
+    it('explicit PUBLIC_URL wins over RENDER_EXTERNAL_URL', () => {
+      const env = validateEnv({
+        ...valid,
+        PUBLIC_URL: 'https://api.polya.top',
+        RENDER_EXTERNAL_URL: 'https://polya.onrender.com',
+      });
+      expect(env.PUBLIC_URL).toBe('https://api.polya.top');
+    });
+
+    it('keep-alive is off by default and bounded', () => {
+      expect(validateEnv(valid).KEEP_ALIVE_MINUTES).toBe(0);
+      expect(validateEnv({ ...valid, KEEP_ALIVE_MINUTES: '10' }).KEEP_ALIVE_MINUTES).toBe(10);
+      expect(() => validateEnv({ ...valid, KEEP_ALIVE_MINUTES: '-1' })).toThrow(
+        /KEEP_ALIVE_MINUTES/,
+      );
+    });
+  });
+
   describe('Telegram', () => {
     const token = '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw1';
 

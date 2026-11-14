@@ -23,6 +23,12 @@ describe('Platform (e2e): health, errors, correlation id', () => {
     expect(res.json()).toMatchObject({ status: 'ok' });
   });
 
+  it('GET /health/ping → 200 keep-alive target outside the API prefix', async () => {
+    const res = await app.inject({ method: 'GET', url: '/health/ping' });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({ status: 'ok', uptimeSeconds: expect.any(Number) });
+  });
+
   it('GET /health → 200 when Mongo and Redis are up', async () => {
     const res = await app.inject({ method: 'GET', url: '/health' });
     expect(res.statusCode).toBe(200);
