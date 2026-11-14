@@ -46,6 +46,9 @@ export const envSchema = z
     /** TZ EC-D4: foydalanuvchiga daqiqasiga update'lar limiti. 0 — o'chiq. */
     BOT_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(0).max(1000).default(30),
 
+    /** TZ 6, EC-D4: REST — foydalanuvchiga daqiqasiga so'rovlar (anonim IP'ga ×5). 0 — o'chiq. */
+    HTTP_RATE_LIMIT_PER_MINUTE: z.coerce.number().int().min(0).max(10_000).default(60),
+
     /** TZ EC-R5: sharh filtri uchun qo'shimcha so'z o'zaklari, vergul bilan (asosiy ro'yxatga qo'shiladi) */
     PROFANITY_EXTRA: z
       .string()

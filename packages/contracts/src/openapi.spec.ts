@@ -47,6 +47,7 @@ describe('OpenAPI document (TZ 7.7)', () => {
     );
     expect(create.security).toEqual([{ bearer: [] }]);
     expect(create.responses['409']?.['x-problem-codes']).toContain('SLOT_TAKEN');
+    expect(create.responses['429']?.['x-problem-codes']).toEqual(['RATE_LIMITED']);
 
     const card = doc.paths['/venues/{idOrSlug}']?.get as { parameters: { in: string }[] };
     expect(card.parameters).toEqual([expect.objectContaining({ name: 'idOrSlug', in: 'path' })]);

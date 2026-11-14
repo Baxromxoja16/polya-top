@@ -304,7 +304,8 @@ export function buildOpenApiDocument(opts: { serverUrl: string; version: string 
           content: { 'application/json': { schema: toSchema(route.response.schema, 'output') } },
         }
       : { description: 'No Content' };
-    for (const [status, codes] of Object.entries(route.problems ?? {})) {
+    // TZ 6, EC-D4: har bir route'da daqiqalik limit (javobda `Retry-After`)
+    for (const [status, codes] of Object.entries({ ...route.problems, 429: ['RATE_LIMITED'] })) {
       responses[status] = {
         description: `Problem: ${codes.join(', ')}`,
         content: { [PROBLEM_JSON_CONTENT_TYPE]: { schema: { $ref: REF('ProblemDetails') } } },
