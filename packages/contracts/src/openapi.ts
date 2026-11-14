@@ -139,7 +139,7 @@ export const API_ROUTES: readonly ApiRoute[] = [
     problems: {
       400: ['VALIDATION_FAILED'],
       404: ['PITCH_NOT_FOUND'],
-      422: ['INVALID_LOCAL_DATE'],
+      422: ['INVALID_LOCAL_DATE', 'BEYOND_HORIZON'],
     },
   },
   {

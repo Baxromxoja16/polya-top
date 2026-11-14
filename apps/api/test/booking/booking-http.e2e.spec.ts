@@ -126,6 +126,14 @@ describe('Booking REST (e2e): TZ BK-1, BK-5, BK-12, 7.7 Idempotency-Key', () => 
 
     expect((await get(`/pitches/${'f'.repeat(24)}/slots?date=${day}`)).statusCode).toBe(404);
     expect(code(await get(`/pitches/${pitchId}/slots?date=2026-02-30`))).toBe('INVALID_LOCAL_DATE');
+    // SP-6: ufqdan tashqari kunlar "FREE" deb ko'rsatilmaydi
+    for (const far of [addDays(day, 30), '9999-12-31']) {
+      const res = await get(`/pitches/${pitchId}/slots?date=${far}`);
+      expect(res.statusCode).toBe(422);
+      expect(code(res)).toBe('BEYOND_HORIZON');
+    }
+    const last = addDays(zonedParts(new Date(), TZ).date, 13);
+    expect((await get(`/pitches/${pitchId}/slots?date=${last}`)).statusCode).toBe(200);
   });
 
   it('requires a bearer token and an Idempotency-Key', async () => {
