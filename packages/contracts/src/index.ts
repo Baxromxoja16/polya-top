@@ -61,6 +61,7 @@ export {
   pageOf,
   pageQuerySchema,
 } from './common.js';
+export { API_ROUTES, type ApiRoute, buildOpenApiDocument } from './openapi.js';
 export {
   PROBLEM_JSON_CONTENT_TYPE,
   type ProblemDetails,
