@@ -17,6 +17,15 @@ export interface UserContactView {
   dailyScheduleOff: boolean;
 }
 
+/** Web so'rovini bajarayotgan akkaunt (TZ ID-7): rollar va holat bilan */
+export interface AccountView {
+  id: string;
+  roles: readonly string[];
+  phone: string | null;
+  language: Language;
+  blocked: boolean;
+}
+
 @Injectable()
 export class IdentityQueries {
   constructor(
@@ -35,6 +44,18 @@ export class IdentityQueries {
       phone: user.phone?.value ?? null,
       botBlocked: user.botBlocked,
       dailyScheduleOff: user.dailyScheduleOff,
+    };
+  }
+
+  async accountOf(userId: string): Promise<AccountView | null> {
+    const user = await this.users.findById(userId as UserId);
+    if (!user) return null;
+    return {
+      id: user.id,
+      roles: [...user.roles],
+      phone: user.phone?.value ?? null,
+      language: user.language,
+      blocked: user.status === 'BLOCKED',
     };
   }
 

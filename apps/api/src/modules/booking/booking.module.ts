@@ -23,6 +23,7 @@ import {
   SlotWatchSchema,
 } from './infrastructure/mongo-slot-watch.store.js';
 import { BookingSweeper } from './interface/booking-sweeper.js';
+import { BookingsController } from './interface/http/bookings.controller.js';
 import { BookingFlowBotFeature } from './interface/telegram/booking-flow.bot.js';
 import { MyBookingsBotFeature } from './interface/telegram/my-bookings.bot.js';
 import { OwnerBookingsBotFeature } from './interface/telegram/owner-bookings.bot.js';
@@ -41,6 +42,7 @@ import { SlotWatchBotFeature } from './interface/telegram/slot-watch.bot.js';
     SchedulingModule,
     IdentityModule,
   ],
+  controllers: [BookingsController],
   providers: [
     { provide: BookingStore, useClass: MongoBookingStore },
     { provide: SlotWatchStore, useClass: MongoSlotWatchStore },

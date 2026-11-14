@@ -174,12 +174,11 @@ export class BookingFlowBotFeature implements BotFeature {
     await this.notifyOwner(booking, [...queueAhead, booking], context);
   }
 
-  /** TZ BK-3, BK-3b: Owner'ga so'rov — navbat bo'lsa, hammasi birga, har biriga tugma bilan */
-  private async notifyOwner(
-    booking: Booking,
-    queue: Booking[],
-    context: PitchContext,
-  ): Promise<void> {
+  /**
+   * TZ BK-3, BK-3b: Owner'ga so'rov — navbat bo'lsa, hammasi birga, har biriga tugma bilan.
+   * REST (web-app) so'rovlari ham shu yerdan xabar beradi — Owner uchun manba farqi yo'q.
+   */
+  async notifyOwner(booking: Booking, queue: Booking[], context: PitchContext): Promise<void> {
     // TZ 4.6: Owner + barcha Staff
     const managers = (
       await Promise.all(

@@ -244,7 +244,8 @@ export class MyBookingsBotFeature implements BotFeature {
     return context ? { booking, context } : null;
   }
 
-  private async notifyOwner(b: Booking): Promise<void> {
+  /** O'yinchi bekor qildi — Owner'ga (bot va REST uchun umumiy) */
+  async notifyOwner(b: Booking): Promise<void> {
     const c = await this.catalog.pitchContext(b.pitchId);
     const owner = c ? await this.identity.contactOf(c.venue.ownerId) : null;
     const player = b.playerId ? await this.identity.contactOf(b.playerId) : null;

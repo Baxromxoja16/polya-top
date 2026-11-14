@@ -29,6 +29,7 @@ import {
   MongoFavoritesRepository,
 } from './infrastructure/mongo-favorites.repository.js';
 import { RedisStaffInviteStore } from './infrastructure/redis-staff-invite.store.js';
+import { PitchesController } from './interface/http/pitches.controller.js';
 import { VenuesController } from './interface/http/venues.controller.js';
 import { PremiumReminder } from './interface/premium-reminder.js';
 import { OwnerOnboardingBotFeature } from './interface/telegram/owner-onboarding.bot.js';
@@ -54,7 +55,7 @@ import { StaffBotFeature } from './interface/telegram/staff.bot.js';
     IdentityModule,
     SubscriptionModule,
   ],
-  controllers: [VenuesController],
+  controllers: [VenuesController, PitchesController],
   providers: [
     { provide: VenueRepository, useClass: MongoVenueRepository },
     { provide: PitchRepository, useClass: MongoPitchRepository },
