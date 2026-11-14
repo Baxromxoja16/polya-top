@@ -75,6 +75,15 @@ describe('Web auth (e2e): TZ ID-7 initData → JWT', () => {
       headers: { authorization: 'Bearer abc.def.ghi' },
     });
     expect(code(bad)).toBe('UNAUTHORIZED');
+
+    // RFC 7235: sxema nomi registrga sezgir emas
+    const tokens = await webLogin(app, ALICE);
+    const lower = await app.inject({
+      method: 'GET',
+      url: '/api/v1/me',
+      headers: { authorization: `bearer ${tokens.accessToken}` },
+    });
+    expect(lower.statusCode).toBe(200);
   });
 
   it('rotates refresh tokens and revokes the family on reuse', async () => {

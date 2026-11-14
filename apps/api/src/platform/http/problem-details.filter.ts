@@ -20,6 +20,8 @@ const STATUS_CODES: Readonly<Record<number, string>> = {
   403: 'FORBIDDEN',
   404: 'NOT_FOUND',
   409: 'CONFLICT',
+  413: 'PAYLOAD_TOO_LARGE',
+  415: 'UNSUPPORTED_MEDIA_TYPE',
   422: 'UNPROCESSABLE',
   429: 'TOO_MANY_REQUESTS',
   503: 'SERVICE_UNAVAILABLE',
@@ -64,9 +66,10 @@ export class ProblemDetailsFilter implements ExceptionFilter {
     }
 
     if (exception instanceof DomainError) {
+      // Tafsilotlar extension sifatida; asosiy a'zolarni (status, code, type, title) bosib keta olmaydi
       return {
-        ...base(HttpStatus.UNPROCESSABLE_ENTITY, exception.code, exception.message),
         ...exception.details,
+        ...base(HttpStatus.UNPROCESSABLE_ENTITY, exception.code, exception.message),
       };
     }
 

@@ -26,3 +26,13 @@ describe('offset cursor', () => {
     expect(nextOffsetCursor(20, 20, 7)).toBeNull();
   });
 });
+
+describe('offset cursor depth', () => {
+  it('stops paginating at MAX_OFFSET', async () => {
+    const { MAX_OFFSET } = await import('./cursor.js');
+    expect(() => decodeOffsetCursor(encodeOffsetCursor(MAX_OFFSET + 1))).toThrow(
+      BadRequestException,
+    );
+    expect(nextOffsetCursor(MAX_OFFSET - 10, 20, 20)).toBeNull();
+  });
+});
