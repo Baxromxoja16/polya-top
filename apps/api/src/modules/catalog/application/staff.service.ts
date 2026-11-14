@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Clock, err, ok, type Result } from '@polya/shared-kernel';
+import { Clock, ConcurrencyConflictError, err, ok, type Result } from '@polya/shared-kernel';
 import { GrantRoleUseCase } from '../../identity/index.js';
 import { FeatureGate } from '../../subscription/index.js';
 import { VenueRepository } from '../domain/repositories.js';
@@ -43,18 +43,27 @@ export class StaffService {
 
   async accept(token: string, userId: string): Promise<Result<Venue, AcceptError>> {
     const venueId = await this.invites.consume(token);
-    const venue = venueId ? await this.venues.findById(venueId as VenueId) : null;
-    if (!venue) return err('INVALID_INVITE');
-    if (venue.ownerId === userId) return err('IS_OWNER');
-    if (venue.staffIds.includes(userId)) return err('ALREADY_STAFF');
-    try {
-      venue.addStaff(userId, await this.features.limit(venue.id, 'STAFF'), this.clock.now());
-    } catch {
-      return err('LIMIT_REACHED');
+    if (!venueId) return err('INVALID_INVITE');
+    // Bir vaqtda boshqa xodim qo'shilsa (versiya ziddiyati) — yangi holat bilan limitni qayta tekshiramiz
+    for (let attempt = 1; ; attempt++) {
+      const venue = await this.venues.findById(venueId as VenueId);
+      if (!venue) return err('INVALID_INVITE');
+      if (venue.ownerId === userId) return err('IS_OWNER');
+      if (venue.staffIds.includes(userId)) return err('ALREADY_STAFF');
+      try {
+        venue.addStaff(userId, await this.features.limit(venue.id, 'STAFF'), this.clock.now());
+      } catch {
+        return err('LIMIT_REACHED');
+      }
+      try {
+        await this.venues.save(venue);
+      } catch (error) {
+        if (error instanceof ConcurrencyConflictError && attempt < 5) continue;
+        throw error;
+      }
+      await this.grantRole.execute(userId, 'STAFF');
+      return ok(venue);
     }
-    await this.venues.save(venue);
-    await this.grantRole.execute(userId, 'STAFF');
-    return ok(venue);
   }
 
   async remove(actor: Actor, venueId: VenueId, staffUserId: string): Promise<boolean> {

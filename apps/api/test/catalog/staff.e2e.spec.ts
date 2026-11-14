@@ -11,6 +11,7 @@ import {
 import type { Connection } from 'mongoose';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { RegisterVenueUseCase } from '../../src/modules/catalog/application/register-venue.use-case.js';
+import { StaffService } from '../../src/modules/catalog/application/staff.service.js';
 import { VenueManagementService } from '../../src/modules/catalog/application/venue-management.service.js';
 import type { VenueId } from '../../src/modules/catalog/domain/venue.js';
 import { GeographyAdminService } from '../../src/modules/geography/index.js';
@@ -166,5 +167,34 @@ describe('Venue staff (e2e): TZ 3, 4.6, 4.9, EC-D1, EC-D3', () => {
     expect((await db.collection('bookings').findOne({ _id: pending?._id }))?.status).toBe(
       'PENDING',
     );
+  });
+
+  it('4.9 under concurrency: two invitees accepting at once → one joins, the other gets LIMIT_REACHED', async () => {
+    const staffService = app.get(StaffService);
+    const ownerDoc = await db.collection('users').findOne({ telegramId: OWNER });
+    const owner = {
+      userId: String(ownerDoc?._id),
+      roles: ['OWNER'],
+      phone: ownerDoc?.phone,
+      cityId: null,
+    };
+    const tokens = await Promise.all(
+      [1, 2].map(() => staffService.invite(owner, venueId as VenueId)),
+    );
+    const ids = await Promise.all(
+      [STAFF, STAFF2].map(async (t) =>
+        String((await db.collection('users').findOne({ telegramId: t }))?._id),
+      ),
+    );
+    const results = await Promise.all(
+      tokens.map((t, i) => {
+        if (!t.ok) throw new Error(t.error);
+        return staffService.accept(t.value, ids[i] as string);
+      }),
+    );
+    expect(results.filter((r) => r.ok)).toHaveLength(1);
+    expect(results.filter((r) => !r.ok).map((r) => (r.ok ? '' : r.error))).toEqual([
+      'LIMIT_REACHED',
+    ]);
   });
 });
