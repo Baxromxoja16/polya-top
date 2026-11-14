@@ -14,7 +14,7 @@ import { REDIS } from '../redis/redis.module.js';
 import type { BotContext, SessionData } from './bot-context.js';
 import { BOT_FEATURE_ORDER, type BotFeature } from './bot-feature.js';
 import { coreMessages } from './core.messages.js';
-import { dedupUpdates, defaultLanguage, rateLimit } from './middlewares.js';
+import { dedupUpdates, defaultLanguage, rateLimit, sequentialize } from './middlewares.js';
 import { RedisSessionStorage } from './redis-session.storage.js';
 import {
   ALLOWED_UPDATES,
@@ -76,6 +76,8 @@ export class TelegramBotService implements OnApplicationBootstrap, OnApplication
     );
     nonPrivate.use(() => undefined);
 
+    // Sessiya o'qilishidan OLDIN: bir foydalanuvchi — bir vaqtda bitta update
+    bot.use(sequentialize());
     bot.use(
       session<SessionData, BotContext>({
         initial: () => ({}),

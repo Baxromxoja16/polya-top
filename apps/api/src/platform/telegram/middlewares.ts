@@ -52,3 +52,31 @@ export const defaultLanguage: MiddlewareFn<BotContext> = async (ctx, next) => {
   ctx.lang = languageFromLocale(ctx.from?.language_code);
   await next();
 };
+
+/**
+ * Bitta foydalanuvchining update'lari NAVBAT bilan qayta ishlanadi. Webhook rejimida Telegram
+ * update'larni parallel yuboradi: ikki marta bosilgan tugma ikki marta bajarilar va Redis sessiyasi
+ * "oxirgi yozgan yutadi" bo'lib qolar edi. Jarayon ichida (bitta API instansi webhook'ni oladi);
+ * gorizontal kengaytirilsa — Redis lock bilan almashtiriladi.
+ */
+export function sequentialize(): MiddlewareFn<BotContext> {
+  const tails = new Map<string, Promise<void>>();
+  return async (ctx, next) => {
+    const key = ctx.from?.id?.toString() ?? ctx.chat?.id?.toString();
+    if (!key) return next();
+    const previous = tails.get(key) ?? Promise.resolve();
+    let release: () => void = () => undefined;
+    const done = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const tail = previous.then(() => done);
+    tails.set(key, tail);
+    await previous;
+    try {
+      await next();
+    } finally {
+      release();
+      if (tails.get(key) === tail) tails.delete(key);
+    }
+  };
+}
