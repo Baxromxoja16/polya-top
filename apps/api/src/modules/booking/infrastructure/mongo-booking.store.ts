@@ -10,7 +10,10 @@ import {
   BookingStore,
   DuplicateActiveRequestError,
   type PitchOccupancyView,
+  PlayerOverlapError,
+  type PlayerRequestGuard,
   SlotTakenError,
+  TooManyPendingError,
 } from '../domain/booking-store.js';
 import {
   BLOCK_MODEL,
@@ -25,6 +28,10 @@ const oid = (id: string) => new Types.ObjectId(id);
 const validIds = (ids: readonly string[]) =>
   ids.filter((id) => Types.ObjectId.isValid(id)).map(oid);
 const ACTIVE: BookingStatus[] = ['PENDING', 'CONFIRMED'];
+/** O'yinchi so'rovlarini ketma-ketlashtiruvchi hujjatlar (BK-11, EC-B6) */
+const PLAYER_GUARDS = 'player_request_guards';
+const GUARD_ATTEMPTS = 25;
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 @Injectable()
 export class MongoBookingStore extends BookingStore implements OnModuleInit {
@@ -235,14 +242,52 @@ export class MongoBookingStore extends BookingStore implements OnModuleInit {
     return result;
   }
 
-  async insertRequest(booking: Booking): Promise<void> {
-    try {
-      await saveVersioned(this.bookings, toDoc(booking), 0);
-    } catch (error) {
-      if (isDuplicateKeyError(error) && 'activeKey' in (error.keyPattern ?? {})) {
-        throw new DuplicateActiveRequestError('Player already has an active request for this slot');
+  async insertRequest(booking: Booking, guard: PlayerRequestGuard): Promise<void> {
+    const playerId = booking.playerId;
+    if (!playerId) throw new Error('insertRequest requires a player booking');
+    const guards = this.connection.collection<{ _id: Types.ObjectId; seq: number }>(PLAYER_GUARDS);
+    // Tranzaksiyadan tashqarida yaratiladi: ichkarida parallel upsert duplicate-key berishi mumkin
+    await guards.updateOne({ _id: oid(playerId) }, { $setOnInsert: { seq: 0 } }, { upsert: true });
+    for (let attempt = 1; ; attempt++) {
+      try {
+        await this.transaction(async (session) => {
+          // Har bir o'yinchi uchun bitta "guard" hujjati: parallel tranzaksiyalar shu yerda
+          // write-conflict oladi, shuning uchun quyidagi tekshiruvlar ketma-ket bajariladi.
+          await guards.updateOne({ _id: oid(playerId) }, { $inc: { seq: 1 } }, { session });
+          const overlap = await this.bookings
+            .exists({
+              playerId: oid(playerId),
+              status: { $in: ACTIVE },
+              start: { $lt: booking.range.end },
+              end: { $gt: booking.range.start },
+            })
+            .session(session);
+          if (overlap) throw new PlayerOverlapError('Player has an overlapping active booking');
+          const pending = await this.bookings
+            .countDocuments({ playerId: oid(playerId), status: 'PENDING' })
+            .session(session);
+          if (pending >= guard.maxPending)
+            throw new TooManyPendingError('Too many pending requests');
+          try {
+            await saveVersioned(this.bookings, toDoc(booking), 0, session);
+          } catch (error) {
+            if (isDuplicateKeyError(error) && 'activeKey' in (error.keyPattern ?? {})) {
+              throw new DuplicateActiveRequestError(
+                'Player already has an active request for this slot',
+              );
+            }
+            throw error;
+          }
+        });
+        break;
+      } catch (error) {
+        // Boshqa so'rov guard'ni egallagan — qisqa kutib qayta urinamiz (keyingi urinish uning natijasini ko'radi)
+        if (error instanceof ConcurrencyConflictError && attempt < GUARD_ATTEMPTS) {
+          await sleep(5 + Math.random() * 20 * attempt);
+          continue;
+        }
+        throw error;
       }
-      throw error;
     }
     booking.markPersisted();
   }

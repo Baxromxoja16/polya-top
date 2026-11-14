@@ -5,8 +5,9 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { Block, type BlockId } from '../../src/modules/booking/domain/block.js';
 import { Booking, type BookingId } from '../../src/modules/booking/domain/booking.js';
 import {
-  DuplicateActiveRequestError,
+  PlayerOverlapError,
   SlotTakenError,
+  TooManyPendingError,
 } from '../../src/modules/booking/domain/booking-store.js';
 import {
   BLOCK_MODEL,
@@ -41,6 +42,9 @@ const request = (startHour: number, hours = 1, playerId = id()) =>
     now,
   });
 
+/** Store testlarida limit amalda yo'q — invariantlar alohida testlarda */
+const GUARD = { maxPending: 1_000 };
+
 describe('MongoBookingStore (e2e): ADR-0002 double booking guarantee', () => {
   let container: StartedMongoDBContainer;
   let connection: Connection;
@@ -73,7 +77,7 @@ describe('MongoBookingStore (e2e): ADR-0002 double booking guarantee', () => {
 
   it('DoD: 50 parallel confirmations of different requests on one slot → exactly one wins', async () => {
     const requests = Array.from({ length: 50 }, () => request(15));
-    for (const r of requests) await store.insertRequest(r);
+    for (const r of requests) await store.insertRequest(r, GUARD);
 
     const results = await Promise.allSettled(
       requests.map(async (r) => {
@@ -92,8 +96,8 @@ describe('MongoBookingStore (e2e): ADR-0002 double booking guarantee', () => {
   it('EC-B1b: a partial overlap (19–21 vs 20–21) is caught at the 20:00 lock', async () => {
     const a = request(14, 2);
     const b = request(15, 1);
-    await store.insertRequest(a);
-    await store.insertRequest(b);
+    await store.insertRequest(a, GUARD);
+    await store.insertRequest(b, GUARD);
     a.confirm('owner', now);
     await store.commitOccupy(a, []);
     b.confirm('owner', now);
@@ -105,8 +109,8 @@ describe('MongoBookingStore (e2e): ADR-0002 double booking guarantee', () => {
   it('BK-3c: confirming rejects overlapping requests in the same transaction', async () => {
     const winner = request(15);
     const loser = request(15);
-    await store.insertRequest(winner);
-    await store.insertRequest(loser);
+    await store.insertRequest(winner, GUARD);
+    await store.insertRequest(loser, GUARD);
     winner.confirm('owner', now);
     loser.rejectAsTaken(now);
     await store.commitOccupy(winner, [loser]);
@@ -115,14 +119,14 @@ describe('MongoBookingStore (e2e): ADR-0002 double booking guarantee', () => {
 
   it('a failing lock rolls back the rejections too (atomicity)', async () => {
     const blocker = request(15);
-    await store.insertRequest(blocker);
+    await store.insertRequest(blocker, GUARD);
     blocker.confirm('owner', now);
     await store.commitOccupy(blocker, []);
 
     const late = request(15);
     const other = request(15);
-    await store.insertRequest(late);
-    await store.insertRequest(other);
+    await store.insertRequest(late, GUARD);
+    await store.insertRequest(other, GUARD);
     late.confirm('owner', now);
     other.rejectAsTaken(now);
     await expect(store.commitOccupy(late, [other])).rejects.toBeInstanceOf(SlotTakenError);
@@ -131,7 +135,7 @@ describe('MongoBookingStore (e2e): ADR-0002 double booking guarantee', () => {
 
   it('BK-8: a block and a booking can never share a slot', async () => {
     const booking = request(16);
-    await store.insertRequest(booking);
+    await store.insertRequest(booking, GUARD);
     const block = Block.create({
       id: id() as BlockId,
       pitchId,
@@ -154,7 +158,7 @@ describe('MongoBookingStore (e2e): ADR-0002 double booking guarantee', () => {
 
   it('cancelling a confirmed booking frees its slots for others', async () => {
     const first = request(17, 2);
-    await store.insertRequest(first);
+    await store.insertRequest(first, GUARD);
     first.confirm('owner', now);
     await store.commitOccupy(first, []);
     expect(await connection.collection('slot_locks').countDocuments()).toBe(2);
@@ -164,33 +168,49 @@ describe('MongoBookingStore (e2e): ADR-0002 double booking guarantee', () => {
     expect(await connection.collection('slot_locks').countDocuments()).toBe(0);
 
     const second = request(17);
-    await store.insertRequest(second);
+    await store.insertRequest(second, GUARD);
     second.confirm('owner', now);
     await expect(store.commitOccupy(second, [])).resolves.toBeUndefined();
   });
 
-  it('EC-B2: the same player cannot have two active requests for the same pitch and start', async () => {
+  it('EC-B2/EC-B6: the same player cannot hold two active requests for one time', async () => {
     const player = id();
-    await store.insertRequest(request(18, 1, player));
-    await expect(store.insertRequest(request(18, 1, player))).rejects.toBeInstanceOf(
-      DuplicateActiveRequestError,
+    await store.insertRequest(request(18, 1, player), GUARD);
+    await expect(store.insertRequest(request(18, 1, player), GUARD)).rejects.toBeInstanceOf(
+      PlayerOverlapError,
     );
+    await expect(store.insertRequest(request(17, 2, player), GUARD)).rejects.toBeInstanceOf(
+      PlayerOverlapError,
+    );
+  });
+
+  it('BK-11: the pending limit is enforced atomically, even for parallel inserts', async () => {
+    const player = id();
+    const results = await Promise.allSettled(
+      [8, 9, 10, 11, 12, 13].map((h) =>
+        store.insertRequest(request(h, 1, player), { maxPending: 2 }),
+      ),
+    );
+    expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(2);
+    for (const r of results.filter((x) => x.status === 'rejected')) {
+      expect((r as PromiseRejectedResult).reason).toBeInstanceOf(TooManyPendingError);
+    }
   });
 
   it('a finished request frees the active key (player can ask again)', async () => {
     const player = id();
     const first = request(19, 1, player);
-    await store.insertRequest(first);
+    await store.insertRequest(first, GUARD);
     first.cancelByPlayer(player, now);
     await store.save(first);
-    await expect(store.insertRequest(request(19, 1, player))).resolves.toBeUndefined();
+    await expect(store.insertRequest(request(19, 1, player), GUARD)).resolves.toBeUndefined();
   });
 
   it('occupancy reports locks as booked and pending requests per slot', async () => {
     const confirmed = request(10);
     const pendingA = request(11, 2);
     const pendingB = request(11);
-    for (const b of [confirmed, pendingA, pendingB]) await store.insertRequest(b);
+    for (const b of [confirmed, pendingA, pendingB]) await store.insertRequest(b, GUARD);
     confirmed.confirm('owner', now);
     await store.commitOccupy(confirmed, []);
 

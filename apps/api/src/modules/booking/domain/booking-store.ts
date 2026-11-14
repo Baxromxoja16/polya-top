@@ -13,6 +13,21 @@ export class DuplicateActiveRequestError extends DomainError {
   readonly code = 'DUPLICATE_ACTIVE_REQUEST';
 }
 
+/** EC-B6: o'yinchining shu vaqtga kesishadigan faol bandlovi bor (parallel so'rovlarda ham). */
+export class PlayerOverlapError extends DomainError {
+  readonly code = 'PLAYER_OVERLAP';
+}
+
+/** BK-11: o'yinchining faol (PENDING) so'rovlari limitga yetgan (parallel so'rovlarda ham). */
+export class TooManyPendingError extends DomainError {
+  readonly code = 'TOO_MANY_PENDING';
+}
+
+/** So'rovni saqlashda atomik tekshiriladigan o'yinchi invariantlari */
+export interface PlayerRequestGuard {
+  maxPending: number;
+}
+
 export interface PitchOccupancyView {
   booked: Set<number>;
   requested: Map<number, number>;
@@ -69,8 +84,12 @@ export abstract class BookingStore {
     to: Date,
   ): Promise<Map<string, PitchOccupancyView>>;
 
-  /** Yangi PENDING so'rov (slot egallamaydi). */
-  abstract insertRequest(booking: Booking): Promise<void>;
+  /**
+   * Yangi PENDING so'rov (slot egallamaydi). O'yinchi bo'yicha ketma-ketlashtiriladi:
+   * kesishuv (EC-B6) va faol so'rovlar limiti (BK-11) shu tranzaksiya ichida qayta tekshiriladi.
+   * @throws PlayerOverlapError | TooManyPendingError | DuplicateActiveRequestError
+   */
+  abstract insertRequest(booking: Booking, guard: PlayerRequestGuard): Promise<void>;
   /** Slotlarga ta'sir qilmaydigan holat o'zgarishi (rad etish, muddat, yakunlash, PENDING'ni bekor qilish). */
   abstract save(booking: Booking): Promise<void>;
   /** Tasdiqlash yoki qo'lda bandlov: holat + slot-lock'lar + `rejected` so'rovlar — atomik. */

@@ -20,7 +20,9 @@ import { Booking, type BookingId, BookingTransitionError } from '../domain/booki
 import {
   BookingStore,
   DuplicateActiveRequestError,
+  PlayerOverlapError,
   SlotTakenError,
+  TooManyPendingError,
 } from '../domain/booking-store.js';
 import { isRestricted, REPUTATION_WINDOW_DAYS, type Reputation } from '../domain/reputation.js';
 
@@ -122,9 +124,11 @@ export class BookingService {
       now: this.clock.now(),
     });
     try {
-      await this.store.insertRequest(booking);
+      await this.store.insertRequest(booking, { maxPending: MAX_PLAYER_PENDING });
     } catch (error) {
       if (error instanceof DuplicateActiveRequestError) return err('DUPLICATE');
+      if (error instanceof PlayerOverlapError) return err('PLAYER_OVERLAP');
+      if (error instanceof TooManyPendingError) return err('TOO_MANY_PENDING');
       throw error;
     }
     const queueAhead = (

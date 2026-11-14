@@ -125,6 +125,31 @@ describe('BookingService (e2e): TZ 4.4, Q1, EC-B*', () => {
     expect(await request(p, 13)).toEqual({ ok: false, error: 'TOO_MANY_PENDING' });
   });
 
+  it('BK-11 under concurrency: 10 parallel requests to different hours → exactly 3 created', async () => {
+    const p = player(30);
+    const results = await Promise.all(
+      [8, 9, 10, 11, 12, 13, 14, 15, 16, 17].map((h) => request(p, h, 1, pitchB)),
+    );
+    const created = results.flatMap((r) => (r.ok ? [r.value.booking.id] : []));
+    expect(created).toHaveLength(3);
+    expect(results.filter((r) => !r.ok).map((r) => (r.ok ? '' : r.error))).toEqual(
+      Array(7).fill('TOO_MANY_PENDING'),
+    );
+    for (const id of created) await service.cancelByPlayer(p, id);
+  });
+
+  it('EC-B6 under concurrency: overlapping requests of one player in parallel → only one', async () => {
+    const p = player(31);
+    const results = await Promise.all([
+      request(p, 18, 2, pitchB),
+      request(p, 19, 2, pitchB),
+      request(p, 19, 1, pitchA),
+    ]);
+    const created = results.flatMap((r) => (r.ok ? [r.value.booking.id] : []));
+    expect(created).toHaveLength(1);
+    for (const id of created) await service.cancelByPlayer(p, id);
+  });
+
   it('PHONE_REQUIRED and quote errors are surfaced', async () => {
     expect(
       await service.request(
