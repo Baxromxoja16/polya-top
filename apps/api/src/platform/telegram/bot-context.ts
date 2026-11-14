@@ -37,6 +37,8 @@ export interface SessionData {
    * saqlanadi — foydalanuvchi menyuga chiqib ketib, keyin davom ettira oladi (TZ EC-O1).
    */
   drafts?: Record<string, Record<string, unknown>>;
+  /** Admin "⚽ Band qilish" ni bosgan: unga o'yinchi menyusi ko'rsatiladi (default — admin menyusi). */
+  menuMode?: 'player';
 }
 
 interface BotFlavor {

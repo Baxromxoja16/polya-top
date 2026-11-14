@@ -3,11 +3,23 @@ import type { Composer } from 'grammy';
 import type { BotContext } from './bot-context.js';
 import { type BotFeature, FeatureOrder, TelegramFeature } from './bot-feature.js';
 import { CANCEL_LABELS, coreMessages } from './core.messages.js';
-import { isMainMenuLabel, mainMenuKeyboard } from './main-menu.js';
+import { isAdmin } from './guards.js';
+import {
+  ADMIN_MENU,
+  adminMenuKeyboard,
+  isAdminMenuLabel,
+  isMainMenuLabel,
+  mainMenuKeyboard,
+} from './main-menu.js';
 
+const ADMIN_MENU_TITLE = '🛠 Admin panel 👇';
+
+/** Admin'ga — admin menyusi (o'yinchi rejimini tanlamagan bo'lsa), qolganlarga — o'yinchi menyusi. */
 export async function sendMainMenu(ctx: BotContext, text?: string): Promise<void> {
-  await ctx.reply(text ?? coreMessages[ctx.lang].mainMenu, {
-    reply_markup: mainMenuKeyboard(ctx.lang),
+  const admin = isAdmin(ctx);
+  const adminMenu = admin && ctx.session.menuMode !== 'player';
+  await ctx.reply(text ?? (adminMenu ? ADMIN_MENU_TITLE : coreMessages[ctx.lang].mainMenu), {
+    reply_markup: adminMenu ? adminMenuKeyboard() : mainMenuKeyboard(ctx.lang, admin),
   });
 }
 
@@ -23,6 +35,17 @@ export class CoreEarlyFeature implements BotFeature {
     };
     bot.hears(CANCEL_LABELS, (ctx) => reset(ctx, coreMessages[ctx.lang].cancelled));
     bot.command('menu', (ctx) => reset(ctx));
+
+    // Admin: admin menyusi ↔ o'yinchi menyusi (Owner'dagi "🏟 Stadion egasiman" kabi)
+    const admin = bot.filter(isAdmin);
+    admin.hears(ADMIN_MENU.playerMode, (ctx) => {
+      ctx.session.menuMode = 'player';
+      return reset(ctx);
+    });
+    admin.hears(ADMIN_MENU.adminMode, (ctx) => {
+      ctx.session.menuMode = undefined;
+      return reset(ctx);
+    });
   }
 }
 
@@ -39,9 +62,10 @@ export class CoreFallbackFeature implements BotFeature {
 
     bot.on('message', async (ctx) => {
       const text = ctx.message.text;
+      const known = isMainMenuLabel(text) && (isAdmin(ctx) || !isAdminMenuLabel(text));
       await sendMainMenu(
         ctx,
-        isMainMenuLabel(text) ? coreMessages[ctx.lang].comingSoon : coreMessages[ctx.lang].unknown,
+        known ? coreMessages[ctx.lang].comingSoon : coreMessages[ctx.lang].unknown,
       );
     });
   }

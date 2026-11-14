@@ -18,17 +18,47 @@ export function menuLabels(item: MainMenuItem): string[] {
   return LANGUAGES.map((lang) => MAIN_MENU[item][lang]);
 }
 
-const ALL_LABELS = new Set(
-  (Object.keys(MAIN_MENU) as MainMenuItem[]).flatMap((item) => menuLabels(item)),
-);
+/**
+ * Admin menyusi (TZ 4.7, AD-1…AD-4). Admin — ichki xodim, matnlar faqat o'zbekcha (`adminText` kabi).
+ * Har bir tugma mavjud slash-buyruqning o'zini ishga tushiradi; buyruqlar ham ishlashda qoladi.
+ */
+export const ADMIN_MENU = {
+  stats: '📊 Statistika',
+  pending: '⏳ Tasdiq kutayotganlar',
+  reviews: '🚩 Shikoyatlar',
+  cities: '🏙 Shaharlar',
+  premium: '💎 Premium',
+  block: '⛔ Bloklash',
+  transfer: "🔁 Egalikni o'tkazish",
+  help: '🛠 Barcha buyruqlar',
+  /** Admin menyusidan o'yinchi menyusiga o'tish */
+  playerMode: '⚽ Band qilish',
+  /** O'yinchi menyusidan (faqat admin'ga ko'rinadi) admin menyusiga qaytish */
+  adminMode: '🛠 Admin panel',
+} as const;
+
+export type AdminMenuItem = keyof typeof ADMIN_MENU;
+
+const ALL_LABELS = new Set([
+  ...(Object.keys(MAIN_MENU) as MainMenuItem[]).flatMap((item) => menuLabels(item)),
+  ...Object.values(ADMIN_MENU),
+]);
+
+const ADMIN_LABELS = new Set<string>(Object.values(ADMIN_MENU));
+
+/** Oddiy foydalanuvchi bu matnni yozsa — "noma'lum" (admin menyusi borligi oshkor qilinmaydi). */
+export function isAdminMenuLabel(text: string | undefined): boolean {
+  return text !== undefined && ADMIN_LABELS.has(text);
+}
 
 export function isMainMenuLabel(text: string | undefined): boolean {
   return text !== undefined && ALL_LABELS.has(text);
 }
 
-export function mainMenuKeyboard(lang: Language): Keyboard {
+/** `withAdminPanel` — admin o'yinchi rejimida: admin menyusiga qaytish tugmasi qo'shiladi. */
+export function mainMenuKeyboard(lang: Language, withAdminPanel = false): Keyboard {
   const l = (item: MainMenuItem) => MAIN_MENU[item][lang];
-  return new Keyboard()
+  const kb = new Keyboard()
     .text(l('find'))
     .row()
     .text(l('nearby'))
@@ -37,7 +67,27 @@ export function mainMenuKeyboard(lang: Language): Keyboard {
     .text(l('favorites'))
     .text(l('settings'))
     .row()
-    .text(l('owner'))
+    .text(l('owner'));
+  if (withAdminPanel) kb.row().text(ADMIN_MENU.adminMode);
+  return kb.resized().persistent();
+}
+
+export function adminMenuKeyboard(): Keyboard {
+  const a = ADMIN_MENU;
+  return new Keyboard()
+    .text(a.stats)
+    .text(a.pending)
+    .row()
+    .text(a.reviews)
+    .text(a.cities)
+    .row()
+    .text(a.premium)
+    .text(a.block)
+    .row()
+    .text(a.transfer)
+    .text(a.help)
+    .row()
+    .text(a.playerMode)
     .resized()
     .persistent();
 }

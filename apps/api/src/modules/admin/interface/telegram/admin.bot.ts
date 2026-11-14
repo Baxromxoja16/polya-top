@@ -8,6 +8,7 @@ import {
   TelegramFeature,
 } from '../../../../platform/telegram/bot-feature.js';
 import { isAdmin, splitPipe } from '../../../../platform/telegram/guards.js';
+import { ADMIN_MENU } from '../../../../platform/telegram/main-menu.js';
 import { TelegramMessenger } from '../../../../platform/telegram/telegram-messenger.js';
 import type { Booking } from '../../../booking/index.js';
 import { type Actor, CatalogQueries } from '../../../catalog/index.js';
@@ -40,6 +41,19 @@ export class AdminModerationBotFeature implements BotFeature {
 
   register(bot: Composer<BotContext>): void {
     const admin = bot.filter(isAdmin);
+
+    // Admin menyusi: hozircha buyruq formatini ko'rsatadi (qadamma-qadam oqim — keyingi bosqich)
+    admin.hears(ADMIN_MENU.block, (ctx) =>
+      ctx.reply(
+        [
+          adminText.usageBlockUser,
+          adminText.usageUnblockUser,
+          adminText.usageBlockVenue,
+          adminText.usageUnblockVenue,
+        ].join('\n'),
+      ),
+    );
+    admin.hears(ADMIN_MENU.transfer, (ctx) => ctx.reply(adminText.usageTransfer));
 
     admin.command('blockuser', async (ctx) => {
       const [ref, reason] = splitPipe(ctx.match);

@@ -7,6 +7,7 @@ import {
   TelegramFeature,
 } from '../../../../platform/telegram/bot-feature.js';
 import { isAdmin } from '../../../../platform/telegram/guards.js';
+import { ADMIN_MENU } from '../../../../platform/telegram/main-menu.js';
 import {
   type BookingFunnel,
   type PlatformStats,
@@ -38,8 +39,11 @@ export class AdminStatsBotFeature implements BotFeature {
   constructor(private readonly stats: StatisticsService) {}
 
   register(bot: Composer<BotContext>): void {
-    bot
-      .filter(isAdmin)
-      .command('stats', async (ctx) => ctx.reply(statsText(await this.stats.snapshot())));
+    const admin = bot.filter(isAdmin);
+    const show = async (ctx: BotContext) => {
+      await ctx.reply(statsText(await this.stats.snapshot()));
+    };
+    admin.command('stats', show);
+    admin.hears(ADMIN_MENU.stats, show);
   }
 }

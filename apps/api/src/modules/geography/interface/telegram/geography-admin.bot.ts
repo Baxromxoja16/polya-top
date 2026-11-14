@@ -8,6 +8,7 @@ import {
   TelegramFeature,
 } from '../../../../platform/telegram/bot-feature.js';
 import { isAdmin, splitFirstWord, splitPipe } from '../../../../platform/telegram/guards.js';
+import { ADMIN_MENU } from '../../../../platform/telegram/main-menu.js';
 import {
   type CityView,
   GeographyAdminService,
@@ -53,8 +54,9 @@ export class GeographyAdminBotFeature implements BotFeature {
     const admin = bot.filter(isAdmin);
 
     admin.command('admin', (ctx) => ctx.reply(HELP));
+    admin.hears(ADMIN_MENU.help, (ctx) => ctx.reply(HELP));
 
-    admin.command('cities', async (ctx) => {
+    const showCities = async (ctx: BotContext) => {
       const cities = await this.queries.listCities();
       if (cities.length === 0)
         return void (await ctx.reply("Shaharlar yo'q. /addcity bilan qo'shing."));
@@ -62,7 +64,9 @@ export class GeographyAdminBotFeature implements BotFeature {
       for (const c of cities)
         kb.text(`${c.isActive ? '⏸' : '▶️'} ${c.slug}`, `geo:toggle:${c.id}`).row();
       await ctx.reply(cities.map(describeCity).join('\n\n'), { reply_markup: kb });
-    });
+    };
+    admin.command('cities', showCities);
+    admin.hears(ADMIN_MENU.cities, showCities);
 
     admin.callbackQuery(/^geo:toggle:([0-9a-f]{24})$/, async (ctx) => {
       const id = ctx.match[1] as CityId;

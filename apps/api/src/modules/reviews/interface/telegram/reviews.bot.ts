@@ -10,7 +10,7 @@ import { sendMainMenu } from '../../../../platform/telegram/core.features.js';
 import { coreMessages } from '../../../../platform/telegram/core.messages.js';
 import { isAdmin } from '../../../../platform/telegram/guards.js';
 import { defineMessages } from '../../../../platform/telegram/i18n.js';
-import { isMainMenuLabel } from '../../../../platform/telegram/main-menu.js';
+import { ADMIN_MENU, isMainMenuLabel } from '../../../../platform/telegram/main-menu.js';
 import { TelegramMessenger } from '../../../../platform/telegram/telegram-messenger.js';
 import { showMessage } from '../../../../platform/telegram/ui.js';
 import { CatalogQueries } from '../../../catalog/index.js';
@@ -209,7 +209,7 @@ export class ReviewsBotFeature implements BotFeature {
 
     // TZ AD-3: moderatsiya
     const admin = bot.filter(isAdmin);
-    admin.command('reviews', async (ctx) => {
+    const showModeration = async (ctx: BotContext) => {
       const hidden = await this.reviews.listForModeration(10);
       if (hidden.length === 0) return void (await ctx.reply("Moderatsiya navbati bo'sh."));
       for (const r of hidden) {
@@ -219,7 +219,9 @@ export class ReviewsBotFeature implements BotFeature {
             .text("🗑 O'chirish", `rv:mod:${r.id}:DELETE`),
         });
       }
-    });
+    };
+    admin.command('reviews', showModeration);
+    admin.hears(ADMIN_MENU.reviews, showModeration);
     admin.callbackQuery(new RegExp(`^rv:mod:${ID}:(SHOW|DELETE)$`), async (ctx) => {
       const r = await this.reviews.moderate(
         actorOf(ctx),

@@ -10,7 +10,11 @@ import {
 import { sendMainMenu } from '../../../../platform/telegram/core.features.js';
 import { coreMessages } from '../../../../platform/telegram/core.messages.js';
 import { hasRole, isAdmin, splitFirstWord } from '../../../../platform/telegram/guards.js';
-import { isMainMenuLabel, menuLabels } from '../../../../platform/telegram/main-menu.js';
+import {
+  ADMIN_MENU,
+  isMainMenuLabel,
+  menuLabels,
+} from '../../../../platform/telegram/main-menu.js';
 import { TelegramMessenger } from '../../../../platform/telegram/telegram-messenger.js';
 import { showMessage } from '../../../../platform/telegram/ui.js';
 import { IdentityQueries } from '../../../identity/index.js';
@@ -45,6 +49,8 @@ const HOUR_PRESETS: readonly [number, number][] = [
 ];
 
 const len = (s: string) => [...s.trim()].length;
+
+const PREMIUM_USAGE = 'Foydalanish: /premium <slug> [kun]\nMasalan: /premium olmaliq-arena 30';
 
 /**
  * TZ VC-1, VC-2: Owner paneli va stadion qo'shish (nom → orientir → ish vaqti → narx).
@@ -114,20 +120,20 @@ export class OwnerOnboardingBotFeature implements BotFeature {
 
     // --- Admin ko'rigi (TZ VC-1, AD-1) ---
     const admin = bot.filter(isAdmin);
-    admin.command('pending', async (ctx) => {
+    const showPending = async (ctx: BotContext) => {
       const pending = await this.queries.pendingReview();
       if (pending.length === 0) return void (await ctx.reply("Ko'rib chiqiladigan stadion yo'q."));
       for (const venue of pending)
         await ctx.reply(await this.adminText(venue), { reply_markup: reviewKeyboard(venue.id) });
-    });
+    };
+    admin.command('pending', showPending);
+    admin.hears(ADMIN_MENU.pending, showPending);
+    admin.hears(ADMIN_MENU.premium, (ctx) => ctx.reply(PREMIUM_USAGE));
     // TZ 4.9: MVP'da to'lov qo'lda — Admin PREMIUM'ni uzaytiradi
     admin.command('premium', async (ctx) => {
       const [ref, daysText] = splitFirstWord(ctx.match);
       const card = ref ? await this.queries.venueCard(ref) : null;
-      if (!card)
-        return void (await ctx.reply(
-          'Foydalanish: /premium <slug> [kun]\nMasalan: /premium olmaliq-arena 30',
-        ));
+      if (!card) return void (await ctx.reply(PREMIUM_USAGE));
       const venue = card.venue;
       if (daysText) {
         const days = Number(daysText);
