@@ -9,6 +9,7 @@ import {
   type Result,
   slugify,
 } from '@polya/shared-kernel';
+import { type CityId, GeographyQueries } from '../../geography/index.js';
 import { type OpeningHours, SchedulingFacade } from '../../scheduling/index.js';
 import { Pitch, type PitchId } from '../domain/pitch.js';
 import { PitchRepository, VenueRepository } from '../domain/repositories.js';
@@ -32,7 +33,8 @@ export interface RegisterVenueOutput {
   sameNameVenues: Venue[];
 }
 
-export type RegisterVenueError = 'NOT_OWNER' | 'PHONE_REQUIRED' | 'CITY_REQUIRED';
+/** CITY_INACTIVE — EC-C2: nofaol shaharda yangi stadion qabul qilinmaydi */
+export type RegisterVenueError = 'NOT_OWNER' | 'PHONE_REQUIRED' | 'CITY_REQUIRED' | 'CITY_INACTIVE';
 
 /**
  * TZ VC-2, VC-2a: sodda onboarding — nom, orientir, ish vaqti, narx. "1-maydon" avtomatik.
@@ -46,6 +48,7 @@ export class RegisterVenueUseCase {
     private readonly scheduling: SchedulingFacade,
     private readonly clock: Clock,
     private readonly ids: IdGenerator,
+    private readonly geography: GeographyQueries,
   ) {}
 
   async execute(
@@ -55,6 +58,9 @@ export class RegisterVenueUseCase {
     if (!actor.roles.includes('OWNER')) return err('NOT_OWNER');
     if (!actor.phone) return err('PHONE_REQUIRED');
     if (!actor.cityId) return err('CITY_REQUIRED');
+    const city = await this.geography.getCity(actor.cityId as CityId);
+    if (!city) return err('CITY_REQUIRED');
+    if (!city.isActive) return err('CITY_INACTIVE');
 
     const now = this.clock.now();
     const venueId = this.ids.next() as VenueId;

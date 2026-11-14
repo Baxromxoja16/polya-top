@@ -102,6 +102,8 @@ export class FreeSearchService {
   }
 
   private async cityPitches(cityId: string): Promise<{ venue: Venue; pitch: Pitch }[]> {
+    // EC-C2: nofaol shaharda qidiruv to'xtatiladi
+    if (!(await this.geography.getCity(cityId as CityId))?.isActive) return [];
     const hits = await this.venues.search({ cityId, limit: MAX_VENUES });
     const venues = hits.map((h) => h.venue);
     const pitches = await this.pitches.listByVenues(venues.map((v) => v.id));

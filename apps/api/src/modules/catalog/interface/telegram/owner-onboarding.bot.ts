@@ -252,7 +252,12 @@ export class OwnerOnboardingBotFeature implements BotFeature {
     });
     if (!result.ok) {
       this.saveDraft(ctx, { ...draft, step: 'price' });
-      const text = result.error === 'CITY_REQUIRED' ? m.cityRequired : m.phoneRequired;
+      const text = {
+        CITY_REQUIRED: m.cityRequired,
+        CITY_INACTIVE: m.cityInactive,
+        PHONE_REQUIRED: m.phoneRequired,
+        NOT_OWNER: m.notOwner,
+      }[result.error];
       return void (await sendMainMenu(ctx, text));
     }
     const { venue, sameNameVenues } = result.value;

@@ -68,11 +68,33 @@ export class GeographyAdminBotFeature implements BotFeature {
       const id = ctx.match[1] as CityId;
       const city = await this.queries.getCity(id);
       if (!city) return void (await ctx.answerCallbackQuery({ text: 'Topilmadi' }));
-      const updated = await this.admin.setCityActive(id, !city.isActive);
-      await ctx.answerCallbackQuery({
-        text: updated.isActive ? 'Faollashtirildi' : 'Nofaol qilindi',
-      });
-      await ctx.reply(describeCity(updated));
+      await ctx.answerCallbackQuery();
+      if (city.isActive) {
+        // EC-C2: nofaol qilishdan oldin ogohlantirish
+        return void (await ctx.reply(
+          `⚠️ «${city.name.uz}» nofaol qilinsa:\n` +
+            "• qidiruv va yangi stadion qo'shish to'xtaydi;\n" +
+            "• mavjud stadionlar va bandlovlar o'z kuchida qoladi;\n" +
+            "• shaharni tanlash ro'yxatidan yo'qoladi.\n\nDavom etasizmi?",
+          {
+            reply_markup: new InlineKeyboard()
+              .text('⏸ Ha, nofaol qilish', `geo:off:${id}`)
+              .text('Bekor', 'geo:cancel'),
+          },
+        ));
+      }
+      await ctx.reply(describeCity(await this.admin.setCityActive(id, true)));
+    });
+
+    admin.callbackQuery(/^geo:off:([0-9a-f]{24})$/, async (ctx) => {
+      const updated = await this.admin.setCityActive(ctx.match[1] as CityId, false);
+      await ctx.answerCallbackQuery({ text: 'Nofaol qilindi' });
+      await ctx.editMessageText(describeCity(updated)).catch(() => undefined);
+    });
+
+    admin.callbackQuery('geo:cancel', async (ctx) => {
+      await ctx.answerCallbackQuery({ text: 'Bekor qilindi' });
+      await ctx.editMessageReplyMarkup().catch(() => undefined);
     });
 
     admin.command('addcity', (ctx) =>

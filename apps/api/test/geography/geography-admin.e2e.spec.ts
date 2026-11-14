@@ -98,10 +98,18 @@ describe('Geography admin bot (e2e): TZ CT-1…CT-3, VC-4b', () => {
     expect(landmark?.location).toMatchObject({ lat: 40.85, lng: 69.6 });
   });
 
-  it('admin toggles a city off and on', async () => {
+  it('admin toggles a city off (after an EC-C2 warning) and on', async () => {
     const list = await admin.send('/cities');
     const toggle = buttons(list).find((b) => b?.startsWith('geo:toggle:')) as string;
-    await admin.press(toggle);
+    const warning = await admin.press(toggle);
+    expect(texts(warning).join('\n')).toContain("bandlovlar o'z kuchida qoladi");
+    expect((await olmaliq()).isActive).toBe(true);
+    await admin.press('geo:cancel');
+    expect((await olmaliq()).isActive).toBe(true);
+
+    await admin.press(
+      buttons(await admin.press(toggle)).find((b) => b?.startsWith('geo:off:')) as string,
+    );
     expect((await olmaliq()).isActive).toBe(false);
     expect(await queries.listCities({ activeOnly: true })).toEqual([]);
     await admin.press(toggle);

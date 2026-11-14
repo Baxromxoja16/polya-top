@@ -41,6 +41,9 @@ export const catalogMessages = defineMessages(
     btnManage: '⚙️ Boshqarish',
     phoneRequired: "Stadion qo'shish uchun telefon raqamingiz kerak.",
     cityRequired: 'Avval sozlamalarda shahringizni tanlang: ⚙️ Sozlamalar → 🏙 Shahar.',
+    cityInactive:
+      'Sizning shahringizda hozircha yangi stadion qabul qilinmayapti. Boshqa shaharni tanlash: ⚙️ Sozlamalar → 🏙 Shahar.',
+    notOwner: "Stadion qo'shish uchun avval Owner arizasi tasdiqlanishi kerak.",
 
     // --- Admin qarori natijasi ---
     venueApproved: (name: string) => `🎉 «${name}» tasdiqlandi va endi qidiruvda ko'rinadi!`,
@@ -90,6 +93,9 @@ export const catalogMessages = defineMessages(
     btnManage: '⚙️ Управление',
     phoneRequired: 'Чтобы добавить стадион, нужен ваш номер телефона.',
     cityRequired: 'Сначала выберите город в настройках: ⚙️ Настройки → 🏙 Город.',
+    cityInactive:
+      'В вашем городе пока не принимаются новые стадионы. Выбрать другой город: ⚙️ Настройки → 🏙 Город.',
+    notOwner: 'Чтобы добавить стадион, заявка владельца должна быть одобрена.',
 
     venueApproved: (name) => `🎉 «${name}» одобрен и теперь виден в поиске!`,
     premiumEnding: (name, days, until) =>

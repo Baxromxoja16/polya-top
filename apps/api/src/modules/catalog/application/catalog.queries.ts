@@ -210,6 +210,9 @@ export class CatalogQueries {
 
   /** TZ VC-4: matn, orientir, hudud, yaqinlik. Faqat APPROVED (VC-1). */
   async search(input: SearchInput): Promise<SearchOutput> {
+    // EC-C2: nofaol shaharda qidiruv to'xtatiladi (mavjud bandlovlar o'z kuchida)
+    const city = await this.geography.getCity(input.cityId as CityId);
+    if (!city?.isActive) return { hits: [], landmarkChoices: [], usedLandmark: null };
     const tokens = searchTokens(input.query ?? '').filter((t) => !STOPWORDS.has(t));
     let landmarkChoices: LandmarkView[] = [];
     let usedLandmark: LandmarkView | null = null;

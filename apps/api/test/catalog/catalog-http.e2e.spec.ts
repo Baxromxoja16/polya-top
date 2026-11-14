@@ -124,6 +124,26 @@ describe('Catalog REST (e2e): TZ 7.7 /cities, /venues', () => {
     }
   });
 
+  it('EC-C2: an inactive city stops search and new venues; existing cards stay reachable', async () => {
+    const geo = app.get(GeographyAdminService);
+    await geo.setCityActive(city.id, false);
+    try {
+      const res = venueSearchResponseSchema.parse((await get(`/venues?cityId=${city.id}`)).json());
+      expect(res.items).toEqual([]);
+      expect((await get('/venues/arena-1')).statusCode).toBe(200);
+      const result = await app.get(RegisterVenueUseCase).execute({
+        actor: owner,
+        name: 'Arena 6',
+        landmarkText: 'yangi',
+        hours: OpeningHours.of(8, 0),
+        pricePerHour: Money.of(100_000),
+      });
+      expect(result).toEqual({ ok: false, error: 'CITY_INACTIVE' });
+    } finally {
+      await geo.setCityActive(city.id, true);
+    }
+  });
+
   it('rejects invalid queries as RFC 9457 problems', async () => {
     const noCity = await get('/venues');
     expect(noCity.statusCode).toBe(400);
