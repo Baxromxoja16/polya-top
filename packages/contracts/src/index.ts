@@ -11,6 +11,28 @@ export {
   tokenPairSchema,
 } from './auth.js';
 export {
+  BOOKING_STATUSES,
+  type BookingDto,
+  bookingDtoSchema,
+  type CreateBookingRequest,
+  type CreateBookingResponse,
+  createBookingResponseSchema,
+  createBookingSchema,
+  IDEMPOTENCY_KEY_HEADER,
+  idempotencyKeySchema,
+  type MyBookingsQuery,
+  type MyBookingsResponse,
+  myBookingsQuerySchema,
+  myBookingsResponseSchema,
+  type PitchSlotsDto,
+  pitchSlotsSchema,
+  SLOT_STATUSES,
+  type SlotDto,
+  type SlotsQuery,
+  slotDtoSchema,
+  slotsQuerySchema,
+} from './booking.js';
+export {
   AMENITIES,
   type CityDto,
   cityDtoSchema,
