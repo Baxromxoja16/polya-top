@@ -40,15 +40,20 @@ export const venueListItemSchema = z.object({
 export type VenueListItemDto = z.infer<typeof venueListItemSchema>;
 
 /** GET /venues — TZ VC-4: matn/orientir, hudud, yaqinlik */
-export const venueSearchQuerySchema = pageQuerySchema.extend({
-  cityId: objectIdSchema,
-  q: z.string().trim().max(100).optional(),
-  districtId: objectIdSchema.optional(),
-  /** EC-O7: bir nechta orientirdan tanlangani */
-  landmarkId: objectIdSchema.optional(),
-  lat: z.coerce.number().min(-90).max(90).optional(),
-  lng: z.coerce.number().min(-180).max(180).optional(),
-});
+export const venueSearchQuerySchema = pageQuerySchema
+  .extend({
+    cityId: objectIdSchema,
+    q: z.string().trim().max(100).optional(),
+    districtId: objectIdSchema.optional(),
+    /** EC-O7: bir nechta orientirdan tanlangani */
+    landmarkId: objectIdSchema.optional(),
+    lat: z.coerce.number().min(-90).max(90).optional(),
+    lng: z.coerce.number().min(-180).max(180).optional(),
+  })
+  .refine((q) => (q.lat === undefined) === (q.lng === undefined), {
+    path: ['lat'],
+    message: 'lat and lng go together',
+  });
 export type VenueSearchQuery = z.infer<typeof venueSearchQuerySchema>;
 
 const landmarkRefSchema = z.object({ id: z.string(), name: localizedTextSchema });
