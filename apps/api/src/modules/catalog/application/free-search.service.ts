@@ -78,9 +78,12 @@ export class FreeSearchService {
     const results: SoonFree[] = [];
     await Promise.all(
       pairs.map(async ({ venue, pitch }) => {
-        // Tungi slotlar oldingi biznes kunida bo'lishi mumkin (EC-S1)
+        // Tungi slotlar oldingi biznes kunida bo'lishi mumkin (EC-S1); kechqurun 3 soatlik oyna
+        // yarim tundan o'tadi — ertangi kunning birinchi slotlari ham hisobga olinadi
         const days = await Promise.all(
-          [addDays(today, -1), today].map((d) => this.availability.dayView(pitch.id, d, tz)),
+          [addDays(today, -1), today, addDays(today, 1)].map((d) =>
+            this.availability.dayView(pitch.id, d, tz),
+          ),
         );
         const slot = days
           .flat()
